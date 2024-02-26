@@ -21,7 +21,7 @@
     <meta name="description" content="">
     <meta property="og:type" content="website">
 <meta property="og:title" content="Feng_ZZ">
-<meta property="og:url" content="https://feng-zz-pwn.github.io/tags/BUUCTF/index.html">
+<meta property="og:url" content="https://feng-zz-pwn.github.io/categories/WP/index.html">
 <meta property="og:site_name" content="Feng_ZZ">
 <meta property="og:locale" content="en_US">
 <meta property="article:author" content="Feng_ZZ">
@@ -429,20 +429,20 @@
             
         
         <article class="index-post">
-            <a class="abstract-title" href="/2024/02/26/zer0pts-2020-babybof/">
+            <a class="abstract-title" href="/2024/02/26/2024VNCTF-PWN/">
                 
-                <span class="abstract-title-text">zer0pts_2020_babybof</span>
+                <span class="abstract-title-text">2024VNCTF--PWN</span>
             </a>
             <div class="abstract-content">
-                代码分析main函数
+                比赛的时候有事情，只能在赛后复现，用了一天的时间，感觉不玩可以拿个方向前几
+PWNshellcode master开了沙盒
 
-main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制
-保护机制
 
-很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不能修改read的libc地址，所以下面我们最好是看看有没有可以利用的gadget
-搜索gadget
+从名字上和沙盒来看，限制了我们读取flag文件内容的函数，于是问了问chatgpt，发现mmap也可以读取文件内容，所以我们就很简单了，
+1void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset);
 
-这里发现了在0x000000000040043e的gadget ：call qword ptr...
+这里直接设置start为0即可，直接通过mmap返回值就可以得到对应地址
+EXP123456789101112131415161718192021222324...
             </div>
             <!-- read more -->
             
@@ -456,9 +456,7 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
                     <div class= abstract-tags >
     
     
-        <a class="post-tag" href="javascript:void(0);" data-tags="BUUCTF">BUUCTF</a>
-    
-        <a class="post-tag" href="javascript:void(0);" data-tags="做题复现">做题复现</a>
+        <a class="post-tag" href="javascript:void(0);" data-tags="VNCTF">VNCTF</a>
     
 </div>
 
