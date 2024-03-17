@@ -434,7 +434,8 @@
                 <span class="abstract-title-text">zer0pts_2020_babybof</span>
             </a>
             <div class="abstract-content">
-                代码分析main函数
+                代码分析
+main函数
 
 main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制
 保护机制
@@ -442,7 +443,7 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
 很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不能修改read的libc地址，所以下面我们最好是看看有没有可以利用的gadget
 搜索gadget
 
-这里发现了在0x000000000040043e的gadget ：call qword ptr...
+这里发现了在0x000000000040043e的gadget ：call qword pt...
             </div>
             <!-- read more -->
             
@@ -585,7 +586,16 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
         
         
         
+        
+        
+        
+        
+        
     
+        
+        
+        
+        
         
         
         
@@ -598,7 +608,7 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
     
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 3
+        Total : 4
         </div>
         <!-- search  -->
         
@@ -612,6 +622,12 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
             <div class="archive-year"> 2024 </div>
             <ul class="year-list">
             
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/16</span>
+            <a class="archive-post-title" href="/2024/03/16/iot-lighttpd/">IOT_Lighttpd</a>
+        </li>
+    
         
         <li class="archive-post-item">
             <span class="archive-post-date">03/12</span>
@@ -636,14 +652,14 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
         
-            <span class="sidebar-tag-name" data-tags="VNCTF">
-                <span class="iconfont-archer">&#xe606;</span>
-                VNCTF
-            </span>
-        
             <span class="sidebar-tag-name" data-tags="IOT">
                 <span class="iconfont-archer">&#xe606;</span>
                 IOT
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="VNCTF">
+                <span class="iconfont-archer">&#xe606;</span>
+                VNCTF
             </span>
         
             <span class="sidebar-tag-name" data-tags="BUUCTF">
@@ -667,14 +683,14 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
         <div class="sidebar-panel-categories">
     <div class="sidebar-categories-name">
     
-        <span class="sidebar-category-name" data-categories="WP">
-            <span class="iconfont-archer">&#xe60a;</span>
-            WP
-        </span>
-    
         <span class="sidebar-category-name" data-categories="IOT">
             <span class="iconfont-archer">&#xe60a;</span>
             IOT
+        </span>
+    
+        <span class="sidebar-category-name" data-categories="WP">
+            <span class="iconfont-archer">&#xe60a;</span>
+            WP
         </span>
     
         <span class="sidebar-category-name" data-categories="BUUCTF_WP">

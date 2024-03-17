@@ -444,15 +444,62 @@
             
         
         <article class="index-post">
+            <a class="abstract-title" href="/2024/03/16/iot-lighttpd/">
+                
+                <span class="abstract-title-text">IOT_Lighttpd</span>
+            </a>
+            <div class="abstract-content">
+                前言
+在复习西湖论剑的题目的时候，遇到了lighttpd作为启动的server，主要想了解一下cgi与lighttpd的调用方式和cgi的调试
+lighttpd与cgi的调用
+
+主要参考文章
+
+文章在第三部分的第四点中，已经说明了，我们无法单独的直接运行cgi，因为运行cgi依赖环境变量
+这一点就是最重要的一点，简单的说lighttpd是一个启动cgi的程序，我们请求方式等其他基本的参数都是被设置成环境变量
+所以我们如果想要调试cgi程序的话，我们肯定需要设置环境变量，也就是模拟lighttpd的作用
+所以我们可以笼统抽象的理解，lighttpd的作用是把我们发送数据包的各种参数设置为环...
+            </div>
+            <!-- read more -->
+            
+            <div class="abstract-post-meta">
+                <!-- date -->
+                <div class="abstract-date" title="Last updated: 2024/03/17">
+                    <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2024/03/16</span>
+                </div>
+                <!-- tags -->
+                
+                    <div class= abstract-tags >
+    
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags="IOT">IOT</a>
+    
+</div>
+
+                
+            </div>
+        </article>
+        <div class="index-post-divider"></div>
+    
+        
+        
+        
+        
+            
+        
+        <article class="index-post">
             <a class="abstract-title" href="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/">
                 
                 <span class="abstract-title-text">IOT-qenu模拟</span>
             </a>
             <div class="abstract-content">
-                DDDD近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的
-为什么要用qemu模拟笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境
+                DDDD
+近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的
+为什么要用qemu模拟
+笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境
 因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟出来的系统有时候并不能完全可以使用，我们可以进入系统内解决，但有时候系统都进不去还是蛮搞的，因此研究qemu的系统模拟就显得尤为重要了
-网上常见的qemu模拟基本上是直接用安装好系统的磁盘占大多，主...
+网上常见的qemu模拟
+基本上是直接用安装好系统的磁盘占大...
             </div>
             <!-- read more -->
             
@@ -488,14 +535,15 @@
             </a>
             <div class="abstract-content">
                 比赛的时候有事情，只能在赛后复现，用了一天的时间，感觉不玩可以拿个方向前几
-PWNshellcode master开了沙盒
-
+PWN
+shellcode master
+开了沙盒
 
 从名字上和沙盒来看，限制了我们读取flag文件内容的函数，于是问了问chatgpt，发现mmap也可以读取文件内容，所以我们就很简单了，
 1void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset);
-
 这里直接设置start为0即可，直接通过mmap返回值就可以得到对应地址
-EXP123456789101112131415161718192021222324...
+EXP
+12345678910111213141516171819202122232...
             </div>
             <!-- read more -->
             
@@ -530,7 +578,8 @@ EXP123456789101112131415161718192021222324...
                 <span class="abstract-title-text">zer0pts_2020_babybof</span>
             </a>
             <div class="abstract-content">
-                代码分析main函数
+                代码分析
+main函数
 
 main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞，但是程序没有其他能够可以泄露出来的函数例如:printf、puts，在遇到这种情况，很有可能是要利用read函数的偏移去得到syscall的gadget，所以我们现在检查一下程序的保护机制
 保护机制
@@ -538,7 +587,7 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
 很明显我们上面想的操作并不能实现，因为RELRO保护是Full RELRO，我们不能修改got表，所以并不能修改read的libc地址，所以下面我们最好是看看有没有可以利用的gadget
 搜索gadget
 
-这里发现了在0x000000000040043e的gadget ：call qword ptr...
+这里发现了在0x000000000040043e的gadget ：call qword pt...
             </div>
             <!-- read more -->
             
@@ -766,7 +815,16 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
         
         
         
+        
+        
+        
+        
+        
     
+        
+        
+        
+        
         
         
         
@@ -779,7 +837,7 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
     
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 3
+        Total : 4
         </div>
         <!-- search  -->
         
@@ -793,6 +851,12 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
             <div class="archive-year"> 2024 </div>
             <ul class="year-list">
             
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/16</span>
+            <a class="archive-post-title" href="/2024/03/16/iot-lighttpd/">IOT_Lighttpd</a>
+        </li>
+    
         
         <li class="archive-post-item">
             <span class="archive-post-date">03/12</span>
@@ -817,14 +881,14 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
         
-            <span class="sidebar-tag-name" data-tags="VNCTF">
-                <span class="iconfont-archer">&#xe606;</span>
-                VNCTF
-            </span>
-        
             <span class="sidebar-tag-name" data-tags="IOT">
                 <span class="iconfont-archer">&#xe606;</span>
                 IOT
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="VNCTF">
+                <span class="iconfont-archer">&#xe606;</span>
+                VNCTF
             </span>
         
             <span class="sidebar-tag-name" data-tags="BUUCTF">
@@ -848,14 +912,14 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
         <div class="sidebar-panel-categories">
     <div class="sidebar-categories-name">
     
-        <span class="sidebar-category-name" data-categories="WP">
-            <span class="iconfont-archer">&#xe60a;</span>
-            WP
-        </span>
-    
         <span class="sidebar-category-name" data-categories="IOT">
             <span class="iconfont-archer">&#xe60a;</span>
             IOT
+        </span>
+    
+        <span class="sidebar-category-name" data-categories="WP">
+            <span class="iconfont-archer">&#xe60a;</span>
+            WP
         </span>
     
         <span class="sidebar-category-name" data-categories="BUUCTF_WP">

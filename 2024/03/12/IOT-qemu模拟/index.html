@@ -19,12 +19,12 @@
         <meta name="keywords" content="hexo,hexo-theme,hexo-blog">
     
     <meta name="description" content="">
-    <meta name="description" content="DDDD近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的 为什么要用qemu模拟笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境 因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟出来">
+    <meta name="description" content="DDDD 近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的 为什么要用qemu模拟 笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境 因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟">
 <meta property="og:type" content="article">
 <meta property="og:title" content="IOT-qenu模拟">
 <meta property="og:url" content="https://feng-zz-pwn.github.io/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/index.html">
 <meta property="og:site_name" content="Feng_ZZ">
-<meta property="og:description" content="DDDD近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的 为什么要用qemu模拟笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境 因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟出来">
+<meta property="og:description" content="DDDD 近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的 为什么要用qemu模拟 笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境 因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312112634522.png">
 <meta property="og:image" content="https://feng-zz-pwn.github.io/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312113846749.png">
@@ -500,85 +500,83 @@
             <div class="container container-unloaded">
                 <main class="main post-page">
     <article class="article-entry">
-        <h1 id="DDDD"><a href="#DDDD" class="headerlink" title="DDDD"></a>DDDD</h1><p>近期准备西湖论剑的比赛，之前对<code>IOT</code>安全这方面有着一丢丢的研究，这篇来主要讲一下<code>qemu</code>模拟，以及我遇到的槽点，特别是针对于使用<code>WSL</code>的</p>
-<h2 id="为什么要用qemu模拟"><a href="#为什么要用qemu模拟" class="headerlink" title="为什么要用qemu模拟"></a>为什么要用<code>qemu</code>模拟</h2><p>笔者之前在复现路由器等漏洞的时候，都是用<code>qemu</code>的用户模拟，我们需要去<code>patch</code>一些东西才可以完成模拟，并且在<code>qemu</code>的用户模拟下，我们不能完完全全的模拟真实的环境</p>
+        <h1>DDDD</h1>
+<p>近期准备西湖论剑的比赛，之前对<code>IOT</code>安全这方面有着一丢丢的研究，这篇来主要讲一下<code>qemu</code>模拟，以及我遇到的槽点，特别是针对于使用<code>WSL</code>的</p>
+<h2 id="为什么要用qemu模拟">为什么要用<code>qemu</code>模拟</h2>
+<p>笔者之前在复现路由器等漏洞的时候，都是用<code>qemu</code>的用户模拟，我们需要去<code>patch</code>一些东西才可以完成模拟，并且在<code>qemu</code>的用户模拟下，我们不能完完全全的模拟真实的环境</p>
 <p>因此我们可能会用到工具类似于<code>FirmAE</code>等等，但是这类工具模拟出来的系统有时候并不能完全可以使用，我们可以进入系统内解决，但有时候系统都进不去还是蛮搞的，因此研究<code>qemu</code>的系统模拟就显得尤为重要了</p>
-<h2 id="网上常见的qemu模拟"><a href="#网上常见的qemu模拟" class="headerlink" title="网上常见的qemu模拟"></a>网上常见的<code>qemu</code>模拟</h2><p>基本上是直接用安装好系统的磁盘占大多，主要是图个方便，可以参考这个<a target="_blank" rel="noopener" href="https://oneda1sy.gitee.io/2021/02/28/MIPS-Qemu-deployment/">文章</a></p>
+<h2 id="网上常见的qemu模拟">网上常见的<code>qemu</code>模拟</h2>
+<p>基本上是直接用安装好系统的磁盘占大多，主要是图个方便，可以参考这个<a target="_blank" rel="noopener" href="https://oneda1sy.gitee.io/2021/02/28/MIPS-Qemu-deployment/">文章</a></p>
 <p>但是抱着如果以后的固件系统的<code>glibc</code>版本会越来越高，最好是学习一下怎么安装一个<code>qemu</code>系统</p>
-<h2 id="安装系统"><a href="#安装系统" class="headerlink" title="安装系统"></a>安装系统</h2><blockquote>
+<h2 id="安装系统">安装系统</h2>
+<blockquote>
 <p>这里是参考这个大佬的<a target="_blank" rel="noopener" href="https://oneshell.top/2022/09/20/%E5%A6%82%E4%BD%95%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%AA%E5%8F%AF%E6%AD%A3%E5%B8%B8%E4%BD%BF%E7%94%A8%E7%9A%84mipsel%E8%99%9A%E6%8B%9F%E6%9C%BA/">文章</a></p>
 </blockquote>
 <p>首先我们肯定是要安装<code>qemu</code>的</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install qemu-system-mipsel qemu-utils</span><br></pre></td></tr></table></figure>
-
-<h3 id="下载系统必要文件"><a href="#下载系统必要文件" class="headerlink" title="下载系统必要文件"></a>下载系统必要文件</h3><p>我们可以通过这个<a target="_blank" rel="noopener" href="http://ftp.debian.org/debian/dists/stable/main/installer-mipsel/current/images/malta/netboot/">网址</a>去看现在的<code>debian</code>的系统，我们主要也是下载最重要的安装&amp;启动文件，这里我们用<code>wget</code>下载下来</p>
+<h3 id="下载系统必要文件">下载系统必要文件</h3>
+<p>我们可以通过这个<a target="_blank" rel="noopener" href="http://ftp.debian.org/debian/dists/stable/main/installer-mipsel/current/images/malta/netboot/">网址</a>去看现在的<code>debian</code>的系统，我们主要也是下载最重要的安装&amp;启动文件，这里我们用<code>wget</code>下载下来</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://ftp.debian.org/debian/dists/stable/main/installer-mipsel/current/images/malta/netboot/initrd.gz</span><br></pre></td></tr></table></figure>
-
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://ftp.debian.org/debian/dists/stable/main/installer-mipsel/current/images/malta/netboot/vmlinuz-6.1.0-18-4kc-malta</span><br></pre></td></tr></table></figure>
-
-<h3 id="创建磁盘"><a href="#创建磁盘" class="headerlink" title="创建磁盘"></a>创建磁盘</h3><p>这里这个磁盘也就是我们安装系统的系统盘</p>
+<h3 id="创建磁盘">创建磁盘</h3>
+<p>这里这个磁盘也就是我们安装系统的系统盘</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">qemu-img create -f qcow2 debian.qcow2 8g</span><br></pre></td></tr></table></figure>
-
-<h3 id="安装-Debian-MIPSEL"><a href="#安装-Debian-MIPSEL" class="headerlink" title="安装 Debian MIPSEL"></a>安装 <code>Debian</code> <code>MIPSEL</code></h3><p>这里我们需要将上述的三个文件放到通过文件夹下，以便我们启动安装</p>
+<h3 id="安装-Debian-MIPSEL">安装 <code>Debian</code> <code>MIPSEL</code></h3>
+<p>这里我们需要将上述的三个文件放到通过文件夹下，以便我们启动安装</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">qemu-system-mipsel -M malta \</span><br><span class="line">  -m 256 -hda debian.qcow2 \</span><br><span class="line">  -kernel vmlinuz-5.10.0-18-4kc-malta \</span><br><span class="line">  -initrd initrd.gz \</span><br><span class="line">  -append <span class="string">&quot;console=ttyS0 nokaslr&quot;</span> \</span><br><span class="line">  -nographic</span><br></pre></td></tr></table></figure>
-
 <p>安装过程基本上也跟参考文章一致，可以自己去对照操作，这里不重复搬运</p>
-<h3 id="安装-bootloader"><a href="#安装-bootloader" class="headerlink" title="安装 bootloader"></a>安装 <code>bootloader</code></h3><p>这里实际上就是提取我们启动系统磁盘的文件，在我们创建的磁盘的<code>/boot</code>文件下</p>
-<h4 id="提取文件"><a href="#提取文件" class="headerlink" title="提取文件"></a>提取文件</h4><p>因为这里<code>qemu</code>用<code>qcow2</code>的格式的磁盘，我们如果要挂在磁盘还需要其他的操作</p>
+<h3 id="安装-bootloader">安装 <code>bootloader</code></h3>
+<p>这里实际上就是提取我们启动系统磁盘的文件，在我们创建的磁盘的<code>/boot</code>文件下</p>
+<h4 id="提取文件">提取文件</h4>
+<p>因为这里<code>qemu</code>用<code>qcow2</code>的格式的磁盘，我们如果要挂在磁盘还需要其他的操作</p>
 <blockquote>
 <p>这里参考文章有点小小错误就是把磁盘以<code>img</code>结尾，导致我以为我一直没有安装成功</p>
 </blockquote>
-<h5 id="挂载磁盘"><a href="#挂载磁盘" class="headerlink" title="挂载磁盘"></a>挂载磁盘</h5><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo modprobe nbd mac_part=16</span><br><span class="line">sudo qemu-nbd -c /dev/nbd0 debian.qcow2</span><br><span class="line">sudo mount /dev/nbd0p1 /tmp/temp</span><br></pre></td></tr></table></figure>
-
-<h5 id="提取"><a href="#提取" class="headerlink" title="提取"></a>提取</h5><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cp</span> -r /tmp/temp/boot/initrd.img-5.10.0-18-4kc-malta .</span><br><span class="line"><span class="built_in">cp</span> -r /tmp/temp/boot/vmlinuz-6.1.0-18-4kc-malta .</span><br></pre></td></tr></table></figure>
-
-<h5 id="取消挂载"><a href="#取消挂载" class="headerlink" title="取消挂载"></a>取消挂载</h5><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo umount /tmp/temp</span><br><span class="line">sudo qemu-nbd -d /dev/nbd0</span><br></pre></td></tr></table></figure>
-
-<h2 id="正式启动虚拟机"><a href="#正式启动虚拟机" class="headerlink" title="正式启动虚拟机"></a>正式启动虚拟机</h2><p><code>start.sh</code>脚本</p>
+<h5 id="挂载磁盘">挂载磁盘</h5>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo modprobe nbd mac_part=16</span><br><span class="line">sudo qemu-nbd -c /dev/nbd0 debian.qcow2</span><br><span class="line">sudo mount /dev/nbd0p1 /tmp/temp</span><br></pre></td></tr></table></figure>
+<h5 id="提取">提取</h5>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cp</span> -r /tmp/temp/boot/initrd.img-5.10.0-18-4kc-malta .</span><br><span class="line"><span class="built_in">cp</span> -r /tmp/temp/boot/vmlinuz-6.1.0-18-4kc-malta .</span><br></pre></td></tr></table></figure>
+<h5 id="取消挂载">取消挂载</h5>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo umount /tmp/temp</span><br><span class="line">sudo qemu-nbd -d /dev/nbd0</span><br></pre></td></tr></table></figure>
+<h2 id="正式启动虚拟机">正式启动虚拟机</h2>
+<p><code>start.sh</code>脚本</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">sudo qemu-system-mipsel -M malta \</span><br><span class="line">  -m 1024 -hda debian.qcow2 \</span><br><span class="line">  -kernel vmlinuz-6.1.0-18-4kc-malta \</span><br><span class="line">  -initrd initrd.img-6.1.0-18-4kc-malta \</span><br><span class="line">  -append <span class="string">&quot;root=/dev/sda1 console=ttyS0 nokaslr&quot;</span> \</span><br><span class="line">  -nographic</span><br></pre></td></tr></table></figure>
-
 <img src="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312112634522.png" class="" title="image-20240312112634522">
-
-<h2 id="配置网络"><a href="#配置网络" class="headerlink" title="配置网络"></a>配置网络</h2><blockquote>
+<h2 id="配置网络">配置网络</h2>
+<blockquote>
 <p>由于也是接触不久<code>qemu</code>，不算是最佳方案去联网，参考<a target="_blank" rel="noopener" href="https://zhou-yuxin.github.io/articles/2018/%E5%AE%89%E8%A3%85qemu-kvm%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E6%A1%A5%E6%8E%A5%E7%BD%91%E7%BB%9C/index.html">文章</a></p>
 </blockquote>
-<h3 id="安装工具"><a href="#安装工具" class="headerlink" title="安装工具"></a>安装工具</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install uml-utilities</span><br></pre></td></tr></table></figure>
-
-<h3 id="创建一张虚拟TUN网卡"><a href="#创建一张虚拟TUN网卡" class="headerlink" title="创建一张虚拟TUN网卡"></a>创建一张虚拟TUN网卡</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo tunctl -t tap0 -u root <span class="comment"># 这里可以是你自己的用户名</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="将网卡设置为任何人都有权限使用："><a href="#将网卡设置为任何人都有权限使用：" class="headerlink" title="将网卡设置为任何人都有权限使用："></a>将网卡设置为任何人都有权限使用：</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo <span class="built_in">chmod</span> 0666 /dev/net/tun</span><br></pre></td></tr></table></figure>
-
-<h4 id="设置ip地址"><a href="#设置ip地址" class="headerlink" title="设置ip地址"></a>设置<code>ip</code>地址</h4><p>不能跟自己本地的任何<code>ip</code>有冲突</p>
+<h3 id="安装工具">安装工具</h3>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install uml-utilities</span><br></pre></td></tr></table></figure>
+<h3 id="创建一张虚拟TUN网卡">创建一张虚拟TUN网卡</h3>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo tunctl -t tap0 -u root <span class="comment"># 这里可以是你自己的用户名</span></span><br></pre></td></tr></table></figure>
+<h4 id="将网卡设置为任何人都有权限使用：">将网卡设置为任何人都有权限使用：</h4>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo <span class="built_in">chmod</span> 0666 /dev/net/tun</span><br></pre></td></tr></table></figure>
+<h4 id="设置ip地址">设置<code>ip</code>地址</h4>
+<p>不能跟自己本地的任何<code>ip</code>有冲突</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo ifconfig tap0 192.168.2.1 up</span><br></pre></td></tr></table></figure>
-
-<h4 id="为虚拟机开启IP数据包转发"><a href="#为虚拟机开启IP数据包转发" class="headerlink" title="为虚拟机开启IP数据包转发"></a>为虚拟机开启<code>IP</code>数据包转发</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> 1 &gt; /proc/sys/net/ipv4/ip_forward   <span class="comment">#只能在root环境下执行</span></span><br><span class="line">sudo iptables -t nat -A POSTROUTING -j MASQUERADE</span><br></pre></td></tr></table></figure>
-
+<h4 id="为虚拟机开启IP数据包转发">为虚拟机开启<code>IP</code>数据包转发</h4>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> 1 &gt; /proc/sys/net/ipv4/ip_forward   <span class="comment">#只能在root环境下执行</span></span><br><span class="line">sudo iptables -t nat -A POSTROUTING -j MASQUERADE</span><br></pre></td></tr></table></figure>
 <p>这里我们可以直接修改系统配置，以后就不用进入root去执行了</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/sysctl.conf</span><br><span class="line"><span class="comment">#将 net.ipv4.ip_forward=0改为net.ipv4.ip_forward=1</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="现在我们的启动脚本"><a href="#现在我们的启动脚本" class="headerlink" title="现在我们的启动脚本"></a>现在我们的启动脚本</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sudo qemu-system-mipsel -M malta \</span><br><span class="line">  -m 1024 -hda debian.qcow2 \</span><br><span class="line">  -kernel vmlinuz-6.1.0-18-4kc-malta \</span><br><span class="line">  -initrd initrd.img-6.1.0-18-4kc-malta \</span><br><span class="line">  -append <span class="string">&quot;root=/dev/sda1 console=ttyS0 nokaslr&quot;</span> \</span><br><span class="line">  -net nic -net tap,ifname=tap0 \</span><br><span class="line">  -nographic</span><br></pre></td></tr></table></figure>
-
-<h4 id="槽点"><a href="#槽点" class="headerlink" title="槽点"></a>槽点</h4><p>我们还需要进入到<code>qemu</code>系统里面去配置<code>IP</code>，而且容易掉<code>ip</code></p>
+<h3 id="现在我们的启动脚本">现在我们的启动脚本</h3>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sudo qemu-system-mipsel -M malta \</span><br><span class="line">  -m 1024 -hda debian.qcow2 \</span><br><span class="line">  -kernel vmlinuz-6.1.0-18-4kc-malta \</span><br><span class="line">  -initrd initrd.img-6.1.0-18-4kc-malta \</span><br><span class="line">  -append <span class="string">&quot;root=/dev/sda1 console=ttyS0 nokaslr&quot;</span> \</span><br><span class="line">  -net nic -net tap,ifname=tap0 \</span><br><span class="line">  -nographic</span><br></pre></td></tr></table></figure>
+<h4 id="槽点">槽点</h4>
+<p>我们还需要进入到<code>qemu</code>系统里面去配置<code>IP</code>，而且容易掉<code>ip</code></p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip addr add 192.168.2.2/24 dev &lt;虚拟的内部自己网卡&gt;</span><br></pre></td></tr></table></figure>
-
 <img src="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312113846749.png" class="" title="image-20240312113846749">
-
 <p>然后我们还需要设置网关</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip route add default via 192.168.2.1</span><br></pre></td></tr></table></figure>
-
 <p>这样应该可以联网了 (but<code>WSL</code>不行)</p>
 <p>不愧是之前学网络的，研究了半天发现，<code>qemu</code>出去的包是没有问题的，但是一旦出去了<code>WSL</code>网络，就回不来，那么真相只有一个！</p>
 <p><code>windows</code>没有对应的路由！！！！！！！</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">route add 192.168.2.0 mask 255.255.255.0 172.20.96.1</span><br></pre></td></tr></table></figure>
-
 <p>这里自己需要对应修改<code>qemu</code>的网段，以及<code>wsl</code>的网关，就是<code>windows</code>连<code>wsl</code>的<code>ip</code>地址</p>
 <img src="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/image-20240312114709689.png" class="" title="image-20240312114709689">
-
-<h3 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h3><p>可以直接在<code>qemu</code>的启动脚本上配置网络</p>
+<h3 id="最后">最后</h3>
+<p>可以直接在<code>qemu</code>的启动脚本上配置网络</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/qemu-ifup</span><br></pre></td></tr></table></figure>
-
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">tunctl -u root -t <span class="variable">$1</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> sudo <span class="built_in">chmod</span> 0666 /dev/net/tun</span><br><span class="line"><span class="built_in">chmod</span> 0666 /dev/net/tun</span><br><span class="line"></span><br><span class="line">ifconfig tap0 192.168.2.1 up</span><br><span class="line">iptables -t nat -A POSTROUTING -j MASQUERADE</span><br></pre></td></tr></table></figure>
-
 
     </article>
     <!-- license -->
@@ -586,6 +584,11 @@
     <!-- paginator -->
     <ul class="post-paginator">
         <li class="next">
+            
+                <div class="nextSlogan">Next Post</div>
+                <a href="/2024/03/16/iot-lighttpd/" title="IOT_Lighttpd">
+                    <div class="nextTitle">IOT_Lighttpd</div>
+                </a>
             
         </li>
         <li class="previous">
@@ -732,7 +735,7 @@
                 <div class="toc-catalog">
                     <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
                 </div>
-                <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#DDDD"><span class="toc-number">1.</span> <span class="toc-text">DDDD</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8qemu%E6%A8%A1%E6%8B%9F"><span class="toc-number">1.1.</span> <span class="toc-text">为什么要用qemu模拟</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E4%B8%8A%E5%B8%B8%E8%A7%81%E7%9A%84qemu%E6%A8%A1%E6%8B%9F"><span class="toc-number">1.2.</span> <span class="toc-text">网上常见的qemu模拟</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.3.</span> <span class="toc-text">安装系统</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD%E7%B3%BB%E7%BB%9F%E5%BF%85%E8%A6%81%E6%96%87%E4%BB%B6"><span class="toc-number">1.3.1.</span> <span class="toc-text">下载系统必要文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E7%A3%81%E7%9B%98"><span class="toc-number">1.3.2.</span> <span class="toc-text">创建磁盘</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85-Debian-MIPSEL"><span class="toc-number">1.3.3.</span> <span class="toc-text">安装 Debian MIPSEL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85-bootloader"><span class="toc-number">1.3.4.</span> <span class="toc-text">安装 bootloader</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8F%90%E5%8F%96%E6%96%87%E4%BB%B6"><span class="toc-number">1.3.4.1.</span> <span class="toc-text">提取文件</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%8C%82%E8%BD%BD%E7%A3%81%E7%9B%98"><span class="toc-number">1.3.4.1.1.</span> <span class="toc-text">挂载磁盘</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%8F%90%E5%8F%96"><span class="toc-number">1.3.4.1.2.</span> <span class="toc-text">提取</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%8F%96%E6%B6%88%E6%8C%82%E8%BD%BD"><span class="toc-number">1.3.4.1.3.</span> <span class="toc-text">取消挂载</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%AD%A3%E5%BC%8F%E5%90%AF%E5%8A%A8%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.4.</span> <span class="toc-text">正式启动虚拟机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%BD%91%E7%BB%9C"><span class="toc-number">1.5.</span> <span class="toc-text">配置网络</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E5%B7%A5%E5%85%B7"><span class="toc-number">1.5.1.</span> <span class="toc-text">安装工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E5%BC%A0%E8%99%9A%E6%8B%9FTUN%E7%BD%91%E5%8D%A1"><span class="toc-number">1.5.2.</span> <span class="toc-text">创建一张虚拟TUN网卡</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%86%E7%BD%91%E5%8D%A1%E8%AE%BE%E7%BD%AE%E4%B8%BA%E4%BB%BB%E4%BD%95%E4%BA%BA%E9%83%BD%E6%9C%89%E6%9D%83%E9%99%90%E4%BD%BF%E7%94%A8%EF%BC%9A"><span class="toc-number">1.5.2.1.</span> <span class="toc-text">将网卡设置为任何人都有权限使用：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEip%E5%9C%B0%E5%9D%80"><span class="toc-number">1.5.2.2.</span> <span class="toc-text">设置ip地址</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BA%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%BC%80%E5%90%AFIP%E6%95%B0%E6%8D%AE%E5%8C%85%E8%BD%AC%E5%8F%91"><span class="toc-number">1.5.2.3.</span> <span class="toc-text">为虚拟机开启IP数据包转发</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8E%B0%E5%9C%A8%E6%88%91%E4%BB%AC%E7%9A%84%E5%90%AF%E5%8A%A8%E8%84%9A%E6%9C%AC"><span class="toc-number">1.5.3.</span> <span class="toc-text">现在我们的启动脚本</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A7%BD%E7%82%B9"><span class="toc-number">1.5.3.1.</span> <span class="toc-text">槽点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%80%E5%90%8E"><span class="toc-number">1.5.4.</span> <span class="toc-text">最后</span></a></li></ol></li></ol></li></ol>
+                <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">DDDD</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8qemu%E6%A8%A1%E6%8B%9F"><span class="toc-number">1.1.</span> <span class="toc-text">为什么要用qemu模拟</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E4%B8%8A%E5%B8%B8%E8%A7%81%E7%9A%84qemu%E6%A8%A1%E6%8B%9F"><span class="toc-number">1.2.</span> <span class="toc-text">网上常见的qemu模拟</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.3.</span> <span class="toc-text">安装系统</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD%E7%B3%BB%E7%BB%9F%E5%BF%85%E8%A6%81%E6%96%87%E4%BB%B6"><span class="toc-number">1.3.1.</span> <span class="toc-text">下载系统必要文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E7%A3%81%E7%9B%98"><span class="toc-number">1.3.2.</span> <span class="toc-text">创建磁盘</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85-Debian-MIPSEL"><span class="toc-number">1.3.3.</span> <span class="toc-text">安装 Debian MIPSEL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85-bootloader"><span class="toc-number">1.3.4.</span> <span class="toc-text">安装 bootloader</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8F%90%E5%8F%96%E6%96%87%E4%BB%B6"><span class="toc-number">1.3.4.1.</span> <span class="toc-text">提取文件</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%8C%82%E8%BD%BD%E7%A3%81%E7%9B%98"><span class="toc-number">1.3.4.1.1.</span> <span class="toc-text">挂载磁盘</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%8F%90%E5%8F%96"><span class="toc-number">1.3.4.1.2.</span> <span class="toc-text">提取</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%8F%96%E6%B6%88%E6%8C%82%E8%BD%BD"><span class="toc-number">1.3.4.1.3.</span> <span class="toc-text">取消挂载</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%AD%A3%E5%BC%8F%E5%90%AF%E5%8A%A8%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="toc-number">1.4.</span> <span class="toc-text">正式启动虚拟机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%BD%91%E7%BB%9C"><span class="toc-number">1.5.</span> <span class="toc-text">配置网络</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E5%B7%A5%E5%85%B7"><span class="toc-number">1.5.1.</span> <span class="toc-text">安装工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E5%BC%A0%E8%99%9A%E6%8B%9FTUN%E7%BD%91%E5%8D%A1"><span class="toc-number">1.5.2.</span> <span class="toc-text">创建一张虚拟TUN网卡</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%86%E7%BD%91%E5%8D%A1%E8%AE%BE%E7%BD%AE%E4%B8%BA%E4%BB%BB%E4%BD%95%E4%BA%BA%E9%83%BD%E6%9C%89%E6%9D%83%E9%99%90%E4%BD%BF%E7%94%A8%EF%BC%9A"><span class="toc-number">1.5.2.1.</span> <span class="toc-text">将网卡设置为任何人都有权限使用：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEip%E5%9C%B0%E5%9D%80"><span class="toc-number">1.5.2.2.</span> <span class="toc-text">设置ip地址</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BA%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%BC%80%E5%90%AFIP%E6%95%B0%E6%8D%AE%E5%8C%85%E8%BD%AC%E5%8F%91"><span class="toc-number">1.5.2.3.</span> <span class="toc-text">为虚拟机开启IP数据包转发</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8E%B0%E5%9C%A8%E6%88%91%E4%BB%AC%E7%9A%84%E5%90%AF%E5%8A%A8%E8%84%9A%E6%9C%AC"><span class="toc-number">1.5.3.</span> <span class="toc-text">现在我们的启动脚本</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A7%BD%E7%82%B9"><span class="toc-number">1.5.3.1.</span> <span class="toc-text">槽点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%80%E5%90%8E"><span class="toc-number">1.5.4.</span> <span class="toc-text">最后</span></a></li></ol></li></ol></li></ol>
             </div>
         
         <!-- sidebar -->
@@ -761,7 +764,16 @@
         
         
         
+        
+        
+        
+        
+        
     
+        
+        
+        
+        
         
         
         
@@ -774,7 +786,7 @@
     
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 3
+        Total : 4
         </div>
         <!-- search  -->
         
@@ -788,6 +800,12 @@
             <div class="archive-year"> 2024 </div>
             <ul class="year-list">
             
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/16</span>
+            <a class="archive-post-title" href="/2024/03/16/iot-lighttpd/">IOT_Lighttpd</a>
+        </li>
+    
         
         <li class="archive-post-item">
             <span class="archive-post-date">03/12</span>
@@ -812,14 +830,14 @@
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
         
-            <span class="sidebar-tag-name" data-tags="VNCTF">
-                <span class="iconfont-archer">&#xe606;</span>
-                VNCTF
-            </span>
-        
             <span class="sidebar-tag-name" data-tags="IOT">
                 <span class="iconfont-archer">&#xe606;</span>
                 IOT
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="VNCTF">
+                <span class="iconfont-archer">&#xe606;</span>
+                VNCTF
             </span>
         
             <span class="sidebar-tag-name" data-tags="BUUCTF">
@@ -843,14 +861,14 @@
         <div class="sidebar-panel-categories">
     <div class="sidebar-categories-name">
     
-        <span class="sidebar-category-name" data-categories="WP">
-            <span class="iconfont-archer">&#xe60a;</span>
-            WP
-        </span>
-    
         <span class="sidebar-category-name" data-categories="IOT">
             <span class="iconfont-archer">&#xe60a;</span>
             IOT
+        </span>
+    
+        <span class="sidebar-category-name" data-categories="WP">
+            <span class="iconfont-archer">&#xe60a;</span>
+            WP
         </span>
     
         <span class="sidebar-category-name" data-categories="BUUCTF_WP">
