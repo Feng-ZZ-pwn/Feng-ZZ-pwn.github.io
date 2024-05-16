@@ -429,6 +429,46 @@
             
         
         <article class="index-post">
+            <a class="abstract-title" href="/2024/05/15/house-of-apple-%E9%93%BE%E5%AD%90%E5%88%86%E6%9E%90/">
+                
+                <span class="abstract-title-text">house_of_apple_链子分析</span>
+            </a>
+            <div class="abstract-content">
+                AT FIRST
+最近在ISCC上做到一道PWN题，其中高版本的largebin attack后的利用手法，很明显是house_of_apple，通过两次largebin attack变可以控制了_IO_list_all的值为堆地址，但是后面上模板老是有问题，这就是这篇文章编写的原因，捋清和加强对FSOP的理解
+House Of Apple
+基本上是高版本堆题或者在限定条件下很常用的利用手法，利用的条件是程序以libc_start_main函数或者以exit函数退出
+通过exit函数会调用fcloseall函数实现FSOP攻击，控制攻击流程
+1exit ---&gt; fcloseall...
+            </div>
+            <!-- read more -->
+            
+            <div class="abstract-post-meta">
+                <!-- date -->
+                <div class="abstract-date" title="Last updated: 2024/05/16">
+                    <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2024/05/15</span>
+                </div>
+                <!-- tags -->
+                
+                    <div class= abstract-tags >
+    
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags="house_of">house_of</a>
+    
+</div>
+
+                
+            </div>
+        </article>
+        <div class="index-post-divider"></div>
+    
+        
+        
+        
+        
+            
+        
+        <article class="index-post">
             <a class="abstract-title" href="/2024/03/16/iot-lighttpd/">
                 
                 <span class="abstract-title-text">IOT_Lighttpd</span>
@@ -720,7 +760,18 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
         
         
         
+        
+        
+        
+        
+        
     
+        
+        
+        
+        
+        
+        
         
         
         
@@ -737,7 +788,7 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
     
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 4
+        Total : 5
         </div>
         <!-- search  -->
         
@@ -751,6 +802,12 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
             <div class="archive-year"> 2024 </div>
             <ul class="year-list">
             
+        
+        <li class="archive-post-item">
+            <span class="archive-post-date">05/15</span>
+            <a class="archive-post-title" href="/2024/05/15/house-of-apple-%E9%93%BE%E5%AD%90%E5%88%86%E6%9E%90/">house_of_apple_链子分析</a>
+        </li>
+    
         
         <li class="archive-post-item">
             <span class="archive-post-date">03/16</span>
@@ -789,6 +846,11 @@ main函数下就只有一个read函数，且是一个很明显的栈溢出漏洞
             <span class="sidebar-tag-name" data-tags="VNCTF">
                 <span class="iconfont-archer">&#xe606;</span>
                 VNCTF
+            </span>
+        
+            <span class="sidebar-tag-name" data-tags="house_of">
+                <span class="iconfont-archer">&#xe606;</span>
+                house_of
             </span>
         
             <span class="sidebar-tag-name" data-tags="BUUCTF">
