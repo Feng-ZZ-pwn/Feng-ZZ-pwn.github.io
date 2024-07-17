@@ -21,7 +21,7 @@
     <meta name="description" content="">
     <meta property="og:type" content="website">
 <meta property="og:title" content="Feng_ZZ">
-<meta property="og:url" content="https://feng-zz-pwn.github.io/tags/IOT/index.html">
+<meta property="og:url" content="https://feng-zz-pwn.github.io/tags/%E5%A4%8D%E7%8E%B0-IOT/index.html">
 <meta property="og:site_name" content="Feng_ZZ">
 <meta property="og:locale" content="en_US">
 <meta property="article:author" content="Feng_ZZ">
@@ -429,76 +429,39 @@
             
         
         <article class="index-post">
-            <a class="abstract-title" href="/2024/03/16/iot-lighttpd/">
+            <a class="abstract-title" href="/2024/05/29/%E5%B0%8F%E7%B1%B3AX9000%E8%B7%AF%E7%94%B1%E5%99%A8%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/">
                 
-                <span class="abstract-title-text">IOT_Lighttpd</span>
+                <span class="abstract-title-text">小米AX9000路由器漏洞复现</span>
             </a>
             <div class="abstract-content">
                 前言
-在复习西湖论剑的题目的时候，遇到了lighttpd作为启动的server，主要想了解一下cgi与lighttpd的调用方式和cgi的调试
-lighttpd与cgi的调用
 
-主要参考文章
+由于昨天写的文章没有保存，今天又又又要重新来一遍 干！
 
-文章在第三部分的第四点中，已经说明了，我们无法单独的直接运行cgi，因为运行cgi依赖环境变量
-这一点就是最重要的一点，简单的说lighttpd是一个启动cgi的程序，我们请求方式等其他基本的参数都是被设置成环境变量
-所以我们如果想要调试cgi程序的话，我们肯定需要设置环境变量，也就是模拟lighttpd的作用
-所以我们可以笼统抽象的理解，lighttpd的作用是把我们发送数据包的各种参数设置为环...
+之前就想对IOT设备进行一些复现，已经漏洞挖掘，虽说之前已经复现过Tenda和Dlink的一些历史漏洞，但毕竟也是好几年前的，现在想着从新一些的漏洞，通过复现了解一下大佬们的挖掘思路
+所以本文主旨为复现，主要参考文章
+固件
+固件下载
+小米有固件下载的官网
+这里也是用winmt师傅给的链接直接下载就行
+固件解压
+关于固件解密这块，我还没有涉略过，但好在小米的固件没有加密，我们可以跟随着文章的思路进行解压
+1binwalk -Me miwifi_ra70_firmware_cc424_1.0.168.bin
+然后我们可以得到一...
             </div>
             <!-- read more -->
             
             <div class="abstract-post-meta">
                 <!-- date -->
-                <div class="abstract-date" title="Last updated: 2024/03/17">
-                    <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2024/03/16</span>
+                <div class="abstract-date" title="Last updated: 2024/07/17">
+                    <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2024/05/29</span>
                 </div>
                 <!-- tags -->
                 
                     <div class= abstract-tags >
     
     
-        <a class="post-tag" href="javascript:void(0);" data-tags="IOT">IOT</a>
-    
-</div>
-
-                
-            </div>
-        </article>
-        <div class="index-post-divider"></div>
-    
-        
-        
-        
-        
-            
-        
-        <article class="index-post">
-            <a class="abstract-title" href="/2024/03/12/IOT-qemu%E6%A8%A1%E6%8B%9F/">
-                
-                <span class="abstract-title-text">IOT-qenu模拟</span>
-            </a>
-            <div class="abstract-content">
-                DDDD
-近期准备西湖论剑的比赛，之前对IOT安全这方面有着一丢丢的研究，这篇来主要讲一下qemu模拟，以及我遇到的槽点，特别是针对于使用WSL的
-为什么要用qemu模拟
-笔者之前在复现路由器等漏洞的时候，都是用qemu的用户模拟，我们需要去patch一些东西才可以完成模拟，并且在qemu的用户模拟下，我们不能完完全全的模拟真实的环境
-因此我们可能会用到工具类似于FirmAE等等，但是这类工具模拟出来的系统有时候并不能完全可以使用，我们可以进入系统内解决，但有时候系统都进不去还是蛮搞的，因此研究qemu的系统模拟就显得尤为重要了
-网上常见的qemu模拟
-基本上是直接用安装好系统的磁盘占大...
-            </div>
-            <!-- read more -->
-            
-            <div class="abstract-post-meta">
-                <!-- date -->
-                <div class="abstract-date" title="Last updated: 2024/03/12">
-                    <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2024/03/12</span>
-                </div>
-                <!-- tags -->
-                
-                    <div class= abstract-tags >
-    
-    
-        <a class="post-tag" href="javascript:void(0);" data-tags="IOT">IOT</a>
+        <a class="post-tag" href="javascript:void(0);" data-tags="复现,IOT">复现,IOT</a>
     
 </div>
 
